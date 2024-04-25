@@ -1,0 +1,54 @@
+.background{
+	-fx-background-color: blue;
+	-fx-font-family: 'serif';
+}
+
+.basicFont{
+	-fx-font-family: 'serif';
+    -fx-font-size: 20px;
+    -fx-text-fill: white;
+}
+
+.basicSmallFont{
+	-fx-font-family: 'serif';
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+}
+
+.errorMessage{
+	-fx-font-family: 'serif';
+    -fx-font-size: 20px;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-text-fill: red;
+}
+
+.indicatorMessage{
+	-fx-font-family: 'serif';
+    -fx-font-size: 20px;
+    -fx-text-fill: white;
+}
+
+.textEntryBox{
+	-fx-font-family: 'serif';
+    -fx-font-size: 20px;
+    -fx-text-fill: black;
+}
+
+.smallTextEntryBox{
+	-fx-font-family: 'serif';
+    -fx-font-size: 12px;
+    -fx-text-fill: black;
+}
+
+.button{
+	-fx-font-family: 'serif';
+    -fx-font-size: 20px;
+    -fx-text-fill: black;
+}
+
+/*.button{
+	-fx-font-size: 20px;
+	-fx-font-weight: bold;
+	-fx-background-color: pink;
+}*/

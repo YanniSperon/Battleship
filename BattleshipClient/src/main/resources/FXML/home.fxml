@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.TextField?>
+
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Tooltip?>
+<BorderPane xmlns:fx="http://javafx.com/fxml/1" styleClass="background" fx:controller="HomeController" fx:id="root">
+    <left>
+        <VBox BorderPane.alignment="CENTER" alignment="CENTER">
+            <Label styleClass="basicFont" alignment="CENTER" fx:id="groupsLabel" text="Groups">
+                <tooltip><Tooltip styleClass="basicFont" text="All public and joined private groups"/></tooltip>
+            </Label>
+            <ListView styleClass="basicSmallFont" fx:id="groupDisplay" onMouseClicked="#groupDisplayClicked">
+                <tooltip><Tooltip styleClass="basicFont" text="Click a group to chat in it"/></tooltip>
+            </ListView>
+            <Button maxWidth="Infinity" styleClass="button" alignment="CENTER" fx:id="createGroupButton" text="Create" onAction="#createGroupButtonPressed"/>
+        </VBox>
+    </left>
+    <center>
+        <VBox BorderPane.alignment="CENTER" alignment="CENTER">
+            <Label alignment="CENTER" styleClass="basicFont" fx:id="chatNameIndicator" text="Global Chat"/>
+            <ListView styleClass="basicSmallFont" fx:id="contentView"/>
+            <HBox prefHeight="50" >
+                <TextField prefHeight="Infinity" styleClass="smallTextEntryBox" alignment="CENTER" fx:id="messageEntryField"
+                           onKeyPressed="#onMessageEntryKeyPressed"/>
+                <Button prefWidth="100" styleClass="button" fx:id="sendButton" text="Send" alignment="CENTER"
+                        onAction="#sendButtonPressed"/>
+            </HBox>
+        </VBox>
+    </center>
+    <right>
+        <VBox BorderPane.alignment="CENTER" alignment="CENTER">
+            <Label alignment="CENTER" styleClass="basicFont" text="Direct Messages">
+                <tooltip><Tooltip styleClass="basicFont" text="All currently connected users"/></tooltip>
+            </Label>
+            <ListView styleClass="basicSmallFont" fx:id="userDisplay" onMouseClicked="#userDisplayClicked">
+                <tooltip><Tooltip styleClass="basicFont" text="Click a user to DM them"/></tooltip>
+            </ListView>
+        </VBox>
+    </right>
+</BorderPane>
