@@ -5,8 +5,8 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.util.*;
 import java.util.function.Consumer;
 
 public class Server {
@@ -14,8 +14,10 @@ public class Server {
     private final Consumer<Serializable> serverLogCallback;
     public final DataManager dataManager;
     private final HashMap<UUID, ClientThread> clients;
+    private final HashMap<String, Game> privateGames;
     public final User serverUser;
     public final Group globalChat;
+    private final LinkedList<UUID> gameQueue;
 
 
     Server(Consumer<Serializable> call) {
@@ -32,6 +34,8 @@ public class Server {
         serverUser.username = "Server";
         globalChat.name = "Global";
         clients.put(serverUserID, new ClientThread());
+        gameQueue = new LinkedList<UUID>();
+        privateGames = new HashMap<String, Game>();
     }
 
     private String getLogClientDescriptor(UUID id) {
@@ -72,7 +76,7 @@ public class Server {
         System.out.println("Executing login attempt");
         serverLogCallback.accept("Received login request from " + getLogClientDescriptor(id));
         LoginAttempt request = (LoginAttempt) p.data;
-        OperationResult replyPayload = new OperationResult();
+        LoginResult replyPayload = new LoginResult();
         replyPayload.status = !dataManager.containsUsername(request.username);
         clients.get(id).sendPacket(new Packet(replyPayload));
         if (replyPayload.status) {
@@ -97,7 +101,7 @@ public class Server {
         serverLogCallback.accept("Received group create request from " + getLogClientDescriptor(id));
         // Read the request and construct the reply
         GroupCreate request = (GroupCreate) p.data;
-        OperationResult replyPayload = new OperationResult();
+        GroupCreateResult replyPayload = new GroupCreateResult();
         // Only allow a user to be created if it is from a valid user and the name isn't taken
         replyPayload.status = (!dataManager.containsGroupName(request.groupName)) && dataManager.isValidUser(request.creatorID);
         // Tell the user whether creation was allowed
@@ -302,6 +306,208 @@ public class Server {
         }
     }
 
+    private void executeFindGame(UUID id, Packet p) {
+        FindGame request = (FindGame) p.data;
+        synchronized (gameQueue) {
+            if (request.shouldFindGame) {
+                if (gameQueue.contains(id)) {
+                    // Ignore request, player already in queue
+                } else {
+                    gameQueue.add(id);
+                    if (gameQueue.size() >= 2) {
+                        // At least two players are in queue, take the two at the front
+                        UUID firstID = gameQueue.pollLast();
+                        UUID secondID = gameQueue.pollLast();
+                        GameFound replyPayload = new GameFound();
+                        replyPayload.user1 = firstID;
+                        replyPayload.user2 = secondID;
+                        Packet reply = new Packet(replyPayload);
+                        clients.get(firstID).sendPacket(reply);
+                        clients.get(secondID).sendPacket(reply);
+
+                        UpdateGame updateGamePayload = new UpdateGame();
+                        updateGamePayload.user1 = firstID;
+                        updateGamePayload.user2 = secondID;
+                        updateGamePayload.game = dataManager.getGame(firstID, secondID);
+                        updateGamePayload.game.player1 = firstID;
+                        updateGamePayload.game.player2 = secondID;
+                        updateGamePayload.game.turn = Game.Player.PLAYER1;
+                        Packet updateGamePacket = new Packet(updateGamePayload);
+                        clients.get(firstID).sendPacket(updateGamePacket);
+                        clients.get(secondID).sendPacket(updateGamePacket);
+                    }
+                }
+            } else {
+                gameQueue.remove(id);
+            }
+        }
+    }
+
+    private void executeLeaveGame(UUID id, Packet p) {
+        LeaveGame request = (LeaveGame) p.data;
+        Game g = dataManager.getGame(request.otherUser, id);
+        boolean isPlayer1 = g.player1.equals(id);
+        if (isPlayer1 || g.player2.equals(id)) {
+            UpdateGame gameEndingPayload = new UpdateGame();
+            g.winner = isPlayer1 ? Game.Player.PLAYER2 : Game.Player.PLAYER1;
+            g.turn = Game.Player.NONE;
+            gameEndingPayload.game = g;
+            clients.get(g.player1).sendPacket(new Packet(gameEndingPayload));
+            clients.get(g.player2).sendPacket(new Packet(gameEndingPayload));
+
+            dataManager.users.get(isPlayer1 ? g.player2 : g.player1).xp += 50;
+            sendUpdatedUserList();
+        }
+    }
+
+    private static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static SecureRandom rnd = new SecureRandom();
+
+    private String generateRandomCode(int len) {
+        StringBuilder sb = new StringBuilder(len);
+        for (int i = 0; i < len; i++) {
+            sb.append(AB.charAt(rnd.nextInt(AB.length())));
+        }
+        return sb.toString();
+    }
+
+    private void executeStartPrivateGame(UUID id, Packet p) {
+        StartPrivateGame request = (StartPrivateGame) p.data;
+        String code = generateRandomCode(8);
+        Game g = new Game();
+        privateGames.put(code, g);
+        g.player1 = id;
+        StartPrivateGameResult resultPayload = new StartPrivateGameResult();
+        resultPayload.joinableID = code;
+        clients.get(id).sendPacket(new Packet(resultPayload));
+    }
+
+    private boolean isValidLocation(ArrayList<Piece> pieces, Coordinate c) {
+        for (Piece p : pieces) {
+            for (Coordinate pos : p.positions) {
+                if (c.equals(pos)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isValidPiece(ArrayList<Piece> otherPieces, Piece p) {
+        if (p.positions.size() != p.size) {
+            return false;
+        }
+        for (Coordinate c : p.positions) {
+            if (!isValidLocation(otherPieces, c)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private int countPiecesWithSize(ArrayList<Piece> pieces, int size) {
+        int count = 0;
+        for (Piece p : pieces) {
+            if (p.size == size) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean canExist(ArrayList<Piece> otherPieces, Piece p) {
+        if (!isValidPiece(otherPieces, p)) {
+            return false;
+        }
+
+        switch (p.size) {
+            case 2:
+                return countPiecesWithSize(otherPieces, 2) == 0;
+            case 3:
+                int numOtherPiecesWithSize = countPiecesWithSize(otherPieces, 2);
+                return numOtherPiecesWithSize == 0 || numOtherPiecesWithSize == 1;
+            case 4:
+                return countPiecesWithSize(otherPieces, 4) == 0;
+            case 5:
+                return countPiecesWithSize(otherPieces, 5) == 0;
+            default:
+                return false;
+        }
+    }
+
+    private void executePlacePiece(UUID id, Packet p) {
+        PlacePiece request = (PlacePiece) p.data;
+        Game g = dataManager.getGame(request.opponent, id);
+        if (g.player1.equals(id)) {
+            // We are player 1
+            if (g.user1Pieces.size() < 5 && canExist(g.user1Pieces, request.piece)) {
+                // Valid
+                g.user1Pieces.add(request.piece);
+                PlacePieceResult res = new PlacePieceResult();
+                res.opponent = request.opponent;
+                res.status = true;
+                clients.get(id).sendPacket(new Packet(res));
+                return;
+            }
+        } else if (g.player2.equals(id)) {
+            // We are player 2
+            if (g.user2Pieces.size() < 5 && canExist(g.user2Pieces, request.piece)) {
+                // Valid
+                g.user2Pieces.add(request.piece);
+                PlacePieceResult res = new PlacePieceResult();
+                res.opponent = request.opponent;
+                res.status = true;
+                clients.get(id).sendPacket(new Packet(res));
+                return;
+            }
+        }
+
+        // If we did not return above, the placement was invalid, indicate to user
+        PlacePieceResult res = new PlacePieceResult();
+        res.opponent = request.opponent;
+        res.status = false;
+        clients.get(id).sendPacket(new Packet(res));
+    }
+
+    private void executeMakeMove(UUID id, Packet p) {
+        MakeMove request = (MakeMove) p.data;
+        Game g = dataManager.getGame(id, request.otherUser);
+        if (g.user1Pieces.size() == 5 && g.user2Pieces.size() == 5) {
+            // Only allow moves here since this means both players have placed their pieces down
+            //TODO
+            //dataManager.users.get(winner).xp += 50;
+            //sendUpdatedUserList();
+        }
+    }
+
+    private void executeJoinPrivateGame(UUID id, Packet p) {
+        JoinPrivateGame request = (JoinPrivateGame) p.data;
+        if (privateGames.containsKey(request.code)) {
+            Game g = privateGames.get(request.code);
+            g.player2 = id;
+            g.turn = Game.Player.PLAYER1;
+
+            JoinPrivateGameResult resultPayload = new JoinPrivateGameResult();
+            resultPayload.otherUser = g.player1;
+            resultPayload.success = true;
+            clients.get(id).sendPacket(new Packet(resultPayload));
+
+            UpdateGame replyPayloadForBoth = new UpdateGame();
+            replyPayloadForBoth.user1 = g.player1;
+            replyPayloadForBoth.user2 = g.player2;
+            replyPayloadForBoth.game = g;
+            Packet replyPacketForBoth = new Packet(replyPayloadForBoth);
+
+            clients.get(g.player1).sendPacket(replyPacketForBoth);
+            clients.get(g.player2).sendPacket(replyPacketForBoth);
+        } else {
+            JoinPrivateGameResult resultPayload = new JoinPrivateGameResult();
+            resultPayload.otherUser = null;
+            resultPayload.success = false;
+            clients.get(id).sendPacket(new Packet(resultPayload));
+        }
+    }
+
     public void executeCommand(UUID id, Packet p) {
         serverLogCallback.accept("client: " + id + " sent: " + p.toString());
         synchronized (dataManager) {
@@ -344,6 +550,30 @@ public class Server {
                 }
                 case BLOCK_USER: {
                     executeBlockUser(id, p);
+                    break;
+                }
+                case FIND_GAME: {
+                    executeFindGame(id, p);
+                    break;
+                }
+                case LEAVE_GAME: {
+                    executeLeaveGame(id, p);
+                    break;
+                }
+                case START_PRIVATE_GAME: {
+                    executeStartPrivateGame(id, p);
+                    break;
+                }
+                case PLACE_PIECE: {
+                    executePlacePiece(id, p);
+                    break;
+                }
+                case MAKE_MOVE: {
+                    executeMakeMove(id, p);
+                    break;
+                }
+                case JOIN_PRIVATE_GAME: {
+                    executeJoinPrivateGame(id, p);
                     break;
                 }
                 default: {
@@ -448,6 +678,10 @@ public class Server {
     public void removeClient(UUID id) {
         System.out.println("Executing disconnect");
 
+        synchronized (gameQueue) {
+            gameQueue.remove(id);
+        }
+
         synchronized (clients) {
             clients.remove(id);
         }
@@ -458,6 +692,20 @@ public class Server {
             leaveMessage.content = dataManager.users.get(id).username + " has left the server";
             leaveMessage.sender = serverUser.uuid;
             dataManager.getGroupChat(globalChat.uuid).messages.add(leaveMessage);
+
+            dataManager.games.forEach((k, v) -> {
+                boolean isPlayer1 = v.player1.equals(id);
+                if (isPlayer1 || v.player2.equals(id)) {
+                    UpdateGame gameEndingPayload = new UpdateGame();
+                    gameEndingPayload.game = v;
+                    gameEndingPayload.game.winner = isPlayer1 ? Game.Player.PLAYER2 : Game.Player.PLAYER1;
+                    gameEndingPayload.game.turn = Game.Player.NONE;
+                    clients.get(isPlayer1 ? v.player2 : v.player1).sendPacket(new Packet(gameEndingPayload));
+
+                    dataManager.users.get(isPlayer1 ? v.player2 : v.player1).xp += 50;
+                    sendUpdatedUserList();
+                }
+            });
 
             dataManager.groupChats.forEach((k, v) -> {
                 for (Message m : v.messages) {

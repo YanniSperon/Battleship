@@ -1,4 +1,5 @@
 import Data.Chat;
+import Data.Game;
 import Data.Group;
 import Data.User;
 import javafx.util.Pair;
@@ -12,6 +13,7 @@ public class DataManager {
     public final HashMap<UUID, Group> groups;
     public final HashMap<UUID, User> users;
     public final HashMap<Pair<UUID, UUID>, Chat> directMessages;
+    public final HashMap<Pair<UUID, UUID>, Game> games;
     public final HashMap<UUID, Chat> groupChats;
 
     DataManager() {
@@ -19,6 +21,7 @@ public class DataManager {
         users = new HashMap<UUID, User>();
         directMessages = new HashMap<Pair<UUID, UUID>, Chat>();
         groupChats = new HashMap<UUID, Chat>();
+        games = new HashMap<Pair<UUID, UUID>, Game>();
     }
 
     public boolean containsUsername(String username) {
@@ -121,5 +124,34 @@ public class DataManager {
             }
         }
         return null;
+    }
+
+    public Game getGame(UUID u1, UUID u2) {
+        if (u1 == null || u2 == null) {
+            return null;
+        }
+        if (u1.compareTo(u2) < 0) {
+            UUID temp = u1;
+            u1 = u2;
+            u2 = temp;
+        }
+        Pair<UUID, UUID> p = new Pair<UUID, UUID>(u1, u2);
+        if (!games.containsKey(p)) {
+            return games.put(p, new Game());
+        }
+        return games.get(p);
+    }
+
+    public void setGame(UUID u1, UUID u2, Game game) {
+        if (u1 == null || u2 == null || game == null) {
+            return;
+        }
+        if (u1.compareTo(u2) < 0) {
+            UUID temp = u1;
+            u1 = u2;
+            u2 = temp;
+        }
+        Pair<UUID, UUID> p = new Pair<UUID, UUID>(u1, u2);
+        games.put(p, game);
     }
 }

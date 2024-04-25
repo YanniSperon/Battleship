@@ -10,8 +10,6 @@ import java.util.function.Consumer;
 
 
 public class Client extends Thread {
-
-
     Socket socketClient;
 
     ObjectOutputStream out;
@@ -20,8 +18,9 @@ public class Client extends Thread {
     private final Consumer<Serializable> UIUpdateCallback;
 
     public UUID uuid;
+    public Boolean isSearchingForGame = false;
+    public String privateGameJoinCode = null;
     public final DataManager dataManager = new DataManager();
-    public Data.Payload.Type lastOperation = Payload.Type.LOGIN_ATTEMPT;
 
     Client(Consumer<Serializable> call) {
 
@@ -42,22 +41,21 @@ public class Client extends Thread {
         UIUpdateCallback.accept(new GUICommand(GUICommand.Type.REFRESH));
     }
 
-    private void executeOperationResult(UUID id, Packet p) {
-        OperationResult d = (OperationResult) p.data;
+    private void executeLoginResult(UUID id, Packet p) {
+        LoginResult d = (LoginResult) p.data;
         if (d.status) {
-            if (lastOperation == Payload.Type.LOGIN_ATTEMPT) {
-                UIUpdateCallback.accept(new GUICommand(GUICommand.Type.LOGIN_SUCCESS));
-            }
-            else if (lastOperation == Payload.Type.GROUP_CREATE) {
-                UIUpdateCallback.accept(new GUICommand(GUICommand.Type.GROUP_CREATE_SUCCESS));
-            }
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.LOGIN_SUCCESS));
         } else {
-            if (lastOperation == Payload.Type.LOGIN_ATTEMPT) {
-                UIUpdateCallback.accept(new GUICommand(GUICommand.Type.LOGIN_ERROR));
-            }
-            else if (lastOperation == Payload.Type.GROUP_CREATE) {
-                UIUpdateCallback.accept(new GUICommand(GUICommand.Type.GROUP_CREATE_ERROR));
-            }
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.LOGIN_ERROR));
+        }
+    }
+
+    private void executeGroupCreateResult(UUID id, Packet p) {
+        GroupCreateResult d = (GroupCreateResult) p.data;
+        if (d.status) {
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.GROUP_CREATE_SUCCESS));
+        } else {
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.GROUP_CREATE_ERROR));
         }
     }
 
@@ -74,6 +72,56 @@ public class Client extends Thread {
         UpdateDirectMessage d = (UpdateDirectMessage) p.data;
         dataManager.setDirectMessage(d.user1ID, d.user2ID, d.chat);
         UIUpdateCallback.accept(new GUICommand(GUICommand.Type.REFRESH));
+    }
+
+    private void executeGameFound(UUID id, Packet p) {
+        GameFound d = (GameFound) p.data;
+        GUIClient.currentActiveGame = d.user1.equals(id) ? d.user2 : d.user1;
+        UIUpdateCallback.accept(new GUICommand(GUICommand.Type.GAME_FOUND));
+    }
+
+    private void executeUpdateGame(UUID id, Packet p) {
+        UpdateGame d = (UpdateGame) p.data;
+        dataManager.setGame(d.user1, d.user2, d.game);
+        UIUpdateCallback.accept(new GUICommand(GUICommand.Type.REFRESH));
+    }
+
+    private void executeStartPrivateGameResult(UUID id, Packet p) {
+        StartPrivateGameResult d = (StartPrivateGameResult) p.data;
+        privateGameJoinCode = d.joinableID;
+        UIUpdateCallback.accept(new GUICommand(GUICommand.Type.PRIVATE_STARTED));
+    }
+
+    private void executeJoinPrivateGameResult(UUID id, Packet p) {
+        JoinPrivateGameResult d = (JoinPrivateGameResult) p.data;
+        if (d.success) {
+            GUIClient.currentActiveGame = d.otherUser;
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.JOIN_PRIVATE_SUCCESS));
+        } else {
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.JOIN_PRIVATE_ERROR));
+        }
+    }
+
+    private void executePlacePieceResult(UUID id, Packet p) {
+        PlacePieceResult d = (PlacePieceResult) p.data;
+        if (d.status) {
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.PLACE_PIECE_SUCCESS));
+        } else {
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.PLACE_PIECE_ERROR));
+        }
+    }
+
+    private void executeMoveResult(UUID id, Packet p) {
+        MoveResult d = (MoveResult) p.data;
+        if (d.status) {
+            if (d.didHit) {
+                UIUpdateCallback.accept(new GUICommand(GUICommand.Type.MOVE_SUCCESS_HIT));
+            } else {
+                UIUpdateCallback.accept(new GUICommand(GUICommand.Type.MOVE_SUCCESS_MISS));
+            }
+        } else {
+            UIUpdateCallback.accept(new GUICommand(GUICommand.Type.MOVE_FAIL));
+        }
     }
 
     public void executeCommand(UUID id, Packet p) {
@@ -97,8 +145,8 @@ public class Client extends Thread {
                     executeUpdateGroups(id, p);
                     break;
                 }
-                case OPERATION_RESULT: {
-                    executeOperationResult(id, p);
+                case LOGIN_RESULT: {
+                    executeLoginResult(id, p);
                     break;
                 }
                 case UPDATE_GROUP_CHAT: {
@@ -107,6 +155,35 @@ public class Client extends Thread {
                 }
                 case UPDATE_DIRECT_MESSAGE: {
                     executeUpdateDirectMessage(id, p);
+                    break;
+                }
+                case GROUP_CREATE_RESULT: {
+                    executeGroupCreateResult(id, p);
+                    break;
+                }
+                case UPDATE_GAME: {
+                    executeUpdateGame(id, p);
+                    break;
+                }
+                case GAME_FOUND: {
+                    executeGameFound(id, p);
+                    break;
+                }
+                case START_PRIVATE_GAME_RESULT: {
+                    executeStartPrivateGameResult(id, p);
+                    break;
+                }
+                case JOIN_PRIVATE_GAME_RESULT: {
+                    executeJoinPrivateGameResult(id, p);
+                    break;
+                }
+                case PLACE_PIECE_RESULT: {
+                    executePlacePieceResult(id, p);
+                    break;
+                }
+                case MOVE_RESULT: {
+                    executeMoveResult(id, p);
+                    break;
                 }
                 default:
                     break;

@@ -8,9 +8,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.input.MouseEvent;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.function.UnaryOperator;
 
 public class LoginController implements CustomController, Initializable {
     public Label invalidUsernameIndicator;
@@ -18,12 +21,12 @@ public class LoginController implements CustomController, Initializable {
     public Button loginButton;
 
     public void loginButtonPressed(ActionEvent actionEvent) {
+        ((HomeController) GUIClient.viewMap.get("home").controller).buttonPressed();
         synchronized (GUIClient.clientConnection.dataManager) {
             String originalEntry = usernameEntryField.getText();
             if (!originalEntry.isEmpty()) {
                 String usernameEntry = originalEntry.trim();
                 if (originalEntry.equals(usernameEntry)) {
-                    GUIClient.clientConnection.lastOperation = Payload.Type.LOGIN_ATTEMPT;
                     System.out.println("Attempting login to server");
 
                     LoginAttempt m = new LoginAttempt();
@@ -53,6 +56,11 @@ public class LoginController implements CustomController, Initializable {
     }
 
     @Override
+    public void postInit() {
+
+    }
+
+    @Override
     public void updateUI(GUICommand command) {
         switch (command.type) {
             case LOGIN_ERROR:
@@ -73,8 +81,29 @@ public class LoginController implements CustomController, Initializable {
 
     }
 
+    String cleanUsernameString(String original)
+    {
+        return original.trim().replace(" ", "").toUpperCase().replaceAll("[^A-Z0-9]", "");
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         GUIClient.viewMap.put("login", new GUIView(null, this));
+
+        usernameEntryField.setTextFormatter(new TextFormatter<String>((TextFormatter.Change c) -> {
+            String text = c.getText();
+            if (!text.isEmpty()) {
+                c.setText(cleanUsernameString(text));
+            }
+            return c;
+        }));
+    }
+
+    public void onMouseEnteredLoginButton(MouseEvent mouseEvent) {
+        loginButton.requestFocus();
+    }
+
+    public void onMouseEnteredUsernameEntry(MouseEvent mouseEvent) {
+        usernameEntryField.requestFocus();
     }
 }

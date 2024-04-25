@@ -7,6 +7,7 @@ import java.util.UUID;
 public class User implements Serializable {
     public UUID uuid;
     public String username = null;
+    public long xp = 0;
     public ArrayList<UUID> blockedUsers = new ArrayList<UUID>();
 
     public User(UUID uuid) {
@@ -27,7 +28,7 @@ public class User implements Serializable {
 
     @Override
     public String toString() {
-        return "User(Name: \"" + username + "\", ID: \"" + uuid + "\")";
+        return "User(Name: \"" + username + "\", XP: \"" + xp + "\" ID: \"" + uuid + "\")";
     }
 
     public String toDisplayString() {

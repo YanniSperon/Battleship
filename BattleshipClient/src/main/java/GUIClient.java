@@ -12,14 +12,18 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 
 public class GUIClient extends Application {
-    private static final int WIDTH = 700;
-    private static final int HEIGHT = 400;
+    private static final int WIDTH = 800;
+    private static final int HEIGHT = 500;
 
     public static HashMap<String, GUIView> viewMap;
     public static Client clientConnection;
 
-    public static UUID currentActiveChat = null;
+    public static UUID currentActiveGame = null;
+    public static UUID globalChat = null;
     public static Stage primaryStage = null;
+
+    public static double volumeMusic = 0.03;
+    public static double volumeSFX = 0.05;
 
     public static void main(String[] args) {
         launch(args);
@@ -51,7 +55,7 @@ public class GUIClient extends Application {
 
         createLoginGUI();
         createHomeGUI();
-        createCreateGroupGUI();
+        createGameGUI();
 
         viewMap.forEach((k,v) -> {
             v.scene.heightProperty().addListener((obs, oldVal, newVal) -> {
@@ -60,6 +64,7 @@ public class GUIClient extends Application {
             v.scene.widthProperty().addListener((obs, oldVal, newVal) -> {
                 v.controller.onResizeWidth(oldVal, newVal);
             });
+            v.controller.postInit();
         });
 
         primaryStage.setScene(viewMap.get("login").scene);
@@ -71,9 +76,7 @@ public class GUIClient extends Application {
     public void createLoginGUI() {
         try {
             Parent root = FXMLLoader.load(getClass().getResource("/FXML/login.fxml"));
-            Scene s1 = new Scene(root, WIDTH, HEIGHT);
-            s1.getStylesheets().add("/styles/shared.css");
-            viewMap.get("login").scene = s1;
+            viewMap.get("login").scene = new Scene(root, WIDTH, HEIGHT);
         } catch (Exception e) {
             System.out.println("Missing resources!");
             System.exit(1);
@@ -83,21 +86,17 @@ public class GUIClient extends Application {
     public void createHomeGUI() {
         try {
             Parent root = FXMLLoader.load(getClass().getResource("/FXML/home.fxml"));
-            Scene s1 = new Scene(root, WIDTH, HEIGHT);
-            s1.getStylesheets().add("/styles/home.css");
-            viewMap.get("home").scene = s1;
+            viewMap.get("home").scene = new Scene(root, WIDTH, HEIGHT);
         } catch (Exception e) {
             System.out.println("Missing resources!");
             System.exit(1);
         }
     }
 
-    public void createCreateGroupGUI() {
+    public void createGameGUI() {
         try {
-            Parent root = FXMLLoader.load(getClass().getResource("/FXML/createGroup.fxml"));
-            Scene s1 = new Scene(root, WIDTH, HEIGHT);
-            s1.getStylesheets().add("/styles/createGroup.css");
-            viewMap.get("createGroup").scene = s1;
+            Parent root = FXMLLoader.load(getClass().getResource("/FXML/game.fxml"));
+            viewMap.get("game").scene = new Scene(root, WIDTH, HEIGHT, true);
         } catch (Exception e) {
             System.out.println("Missing resources!");
             System.exit(1);

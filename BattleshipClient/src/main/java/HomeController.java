@@ -1,15 +1,19 @@
 import Data.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.Scene;
+import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
+import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.util.Duration;
 
+import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,47 +21,23 @@ import java.util.ResourceBundle;
 import java.util.UUID;
 
 public class HomeController implements CustomController, Initializable {
-    public TextField messageEntryField;
-    public Button sendButton;
-    public Label groupsLabel;
-    public Label chatNameIndicator;
-    public Button createGroupButton;
-    public ListView<String> contentView;
-    public ListView<String> userDisplay;
-    public ListView<String> groupDisplay;
+    public ProgressBar levelProgressBar;
+    public Button levelIndicator;
+    public Button findGameButton;
+    public Button customGameButton;
+    public Button settingsButton;
+    public Button startButton;
+    public Button joinButton;
+    public ImageView subcategoryIndicator;
+    public Button cancelFindGameButton;
 
-    public void groupDisplayClicked(MouseEvent mouseEvent) {
-        String selectedItem = groupDisplay.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && !selectedItem.isEmpty()) {
-            System.out.println("List item " + selectedItem + " was clicked");
-            GUIClient.currentActiveChat = GUIClient.clientConnection.dataManager.getByGroupName(selectedItem);
-            updateUI(new GUICommand(GUICommand.Type.REFRESH));
-        }
-    }
-
-    public void userDisplayClicked(MouseEvent mouseEvent) {
-        String selectedItem = userDisplay.getSelectionModel().getSelectedItem();
-        if (selectedItem != null && !selectedItem.isEmpty()) {
-            System.out.println("List item " + selectedItem + " was clicked");
-            UUID selected = GUIClient.clientConnection.dataManager.getByUsername(selectedItem);
-            System.out.println("Client connection is " + GUIClient.clientConnection.uuid);
-            System.out.println("Selected is " + selected);
-            if (!selected.equals(GUIClient.clientConnection.uuid)) {
-                GUIClient.currentActiveChat = selected;
-            }
-            updateUI(new GUICommand(GUICommand.Type.REFRESH));
-        }
-    }
-
-    public void onMessageEntryKeyPressed(KeyEvent keyEvent) {
-        if (keyEvent.getCode().equals(KeyCode.ENTER)) {
-            sendButtonPressed(new ActionEvent());
-        }
-    }
+    private MediaPlayer mediaPlayer;
+    private AudioClip navigationSFX;
 
     public void sendButtonPressed(ActionEvent actionEvent) {
         synchronized (GUIClient.clientConnection.dataManager) {
-            String message = messageEntryField.getText();
+            //String message = messageEntryField.getText();
+            /*String message = "TODO";
             if (GUIClient.clientConnection.dataManager.isValidGroup(GUIClient.currentActiveChat)) {
                 GroupMessage m = new GroupMessage();
                 m.message.content = message;
@@ -70,86 +50,46 @@ public class HomeController implements CustomController, Initializable {
                 m.message.sender = GUIClient.clientConnection.uuid;
                 m.receiver = GUIClient.currentActiveChat;
                 GUIClient.clientConnection.send(new Packet(m));
-            }
-            messageEntryField.clear();
+            }*/
+            //messageEntryField.clear();
         }
-    }
-
-    public void createGroupButtonPressed(ActionEvent actionEvent) {
-        GUIClient.primaryStage.setScene(GUIClient.viewMap.get("createGroup").scene);
     }
 
     private void onLoginSuccess() {
         GUIClient.primaryStage.setScene(GUIClient.viewMap.get("home").scene);
         synchronized (GUIClient.clientConnection.dataManager) {
-            GUIClient.currentActiveChat = GUIClient.clientConnection.dataManager.getGlobalGroup();
+            GUIClient.globalChat = GUIClient.clientConnection.dataManager.getGlobalGroup();
         }
+        focusCurrentButton();
+    }
+
+    private long getCurrentLevel(User u) {
+        return (u.xp / 100) + 1;
+    }
+
+    private double getDecimalToNextLevelRepresentation(User u) {
+        return Math.max((((double) (u.xp % 100)) * 0.01), 0.05);
     }
 
     private void refreshGUI() {
         synchronized (GUIClient.clientConnection.dataManager) {
-            if (GUIClient.clientConnection.dataManager.isValidUser(GUIClient.currentActiveChat)) {
-                chatNameIndicator.setText("DM with \"" + GUIClient.clientConnection.dataManager.users.get(GUIClient.currentActiveChat).username + "\"");
-            } else if (GUIClient.currentActiveChat != null) {
-                if (GUIClient.clientConnection.dataManager.isValidGroup(GUIClient.currentActiveChat)) {
-                    chatNameIndicator.setText("Group \"" + GUIClient.clientConnection.dataManager.groups.get(GUIClient.currentActiveChat).name + "\"");
-                } else {
-                    GUIClient.currentActiveChat = null;
-                }
-            }
-            String username = GUIClient.clientConnection.dataManager.users.get(GUIClient.clientConnection.uuid).username;
-            if (username != null) {
-                GUIClient.primaryStage.setTitle("Logged in as \"" + username + "\"");
-            }
+            User u = GUIClient.clientConnection.dataManager.users.get(GUIClient.clientConnection.uuid);
+            GUIClient.primaryStage.setTitle(u.username);
+            long level = getCurrentLevel(u);
+            levelIndicator.getStyleClass().clear();
+            levelIndicator.getStyleClass().add("level" + level + "Indicator");
+            double ratioToNextLevel = getDecimalToNextLevelRepresentation(u);
+            levelProgressBar.setProgress(ratioToNextLevel);
+        }
+    }
 
-            groupDisplay.getItems().clear();
-            for (Map.Entry<UUID, Group> pair : GUIClient.clientConnection.dataManager.groups.entrySet()) {
-                groupDisplay.getItems().add(pair.getValue().toDisplayString());
-            }
-
-            boolean didAddAny = false;
-            userDisplay.getItems().clear();
-            for (Map.Entry<UUID, User> pair : GUIClient.clientConnection.dataManager.users.entrySet()) {
-                if ((!pair.getKey().equals(GUIClient.clientConnection.uuid)) && (pair.getValue().username != null) && (!pair.getValue().username.equals("Server"))) {
-                    userDisplay.getItems().add(pair.getValue().toDisplayString());
-                    didAddAny = true;
-                }
-            }
-            if (!didAddAny) {
-                userDisplay.getItems().add("");
-            }
-
-
-            contentView.getItems().clear();
-            if (GUIClient.clientConnection.dataManager.isValidGroup(GUIClient.currentActiveChat)) {
-                Group gt = GUIClient.clientConnection.dataManager.groups.get(GUIClient.currentActiveChat);
-                if (!gt.isPrivate || gt.users.contains(GUIClient.clientConnection.uuid) || (gt.creator != null && gt.creator.equals(GUIClient.clientConnection.uuid))) {
-                    for (Data.Message m : GUIClient.clientConnection.dataManager.getGroupChat(GUIClient.currentActiveChat).messages) {
-                        String senderName = GUIClient.clientConnection.dataManager.users.get(m.sender).username;
-                        if (senderName == null || senderName.equals("Server")) {
-                            contentView.getItems().add(m.content);
-                        } else {
-                            contentView.getItems().add(senderName + ": " + m.content);
-                        }
-                    }
-                } else {
-                    contentView.getItems().add("This is a private group chat that");
-                    contentView.getItems().add("you do not have permission to view");
-                }
-            } else if (GUIClient.clientConnection.dataManager.isValidUser(GUIClient.currentActiveChat)) {
-                if (GUIClient.clientConnection.dataManager.getDM(GUIClient.clientConnection.uuid, GUIClient.currentActiveChat) != null) {
-                    for (Data.Message m : GUIClient.clientConnection.dataManager.getDM(GUIClient.clientConnection.uuid, GUIClient.currentActiveChat).messages) {
-                        String senderName = GUIClient.clientConnection.dataManager.users.get(m.sender).username;
-                        if (senderName == null || senderName.equals("Server")) {
-                            contentView.getItems().add(m.content);
-                        } else {
-                            contentView.getItems().add(senderName + ": " + m.content);
-                        }
-                    }
-                }
-            } else {
-                contentView.getItems().add("");
-            }
+    @Override
+    public void postInit() {
+        Scene s = GUIClient.viewMap.get("home").scene;
+        if (s == null) {
+            System.out.println("Scene is null");
+        } else {
+            s.setOnKeyPressed(this::priorityKeyPress);
         }
     }
 
@@ -181,5 +121,223 @@ public class HomeController implements CustomController, Initializable {
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         GUIClient.viewMap.put("home", new GUIView(null, this));
+        Media media = new Media(getClass().getResource("/audio/TitleScreenMusic.mp3").toExternalForm());
+        mediaPlayer = new MediaPlayer(media);
+        mediaPlayer.setVolume(GUIClient.volumeMusic);
+        mediaPlayer.setAutoPlay(true);
+        mediaPlayer.setOnEndOfMedia(new Runnable() {
+            @Override
+            public void run() {
+                mediaPlayer.seek(Duration.ZERO);
+                mediaPlayer.play();
+            }
+        });
+
+        navigationSFX = new AudioClip(getClass().getResource("/audio/MenuNavigationSFX.mp3").toExternalForm());
+        navigationSFX.setVolume(GUIClient.volumeSFX);
+
+        focusCurrentButton();
+    }
+
+    public void buttonPressed() {
+        navigationSFX.play();
+    }
+
+    private void setHasSelectedCustomGame(boolean hasSelected) {
+        hasSelectedCustomGame = hasSelected;
+
+        startButton.setVisible(hasSelected);
+        subcategoryIndicator.setVisible(hasSelected);
+        joinButton.setVisible(hasSelected);
+
+        if (hasSelected) {
+            if (currFocus == 2) {
+                currFocus = 3;
+            }
+            currFocusMin = 3;
+            currFocusMax = 4;
+        } else {
+            if (currFocus == 3 || currFocus == 4) {
+                currFocus = 1;
+            }
+            currFocusMin = 0;
+            currFocusMax = 2;
+        }
+
+        focusCurrentButton();
+    }
+
+    public void findGameButtonPressed(ActionEvent actionEvent) {
+        setHasSelectedCustomGame(false);
+        buttonPressed();
+        synchronized (GUIClient.clientConnection.isSearchingForGame) {
+            GUIClient.clientConnection.isSearchingForGame = true;
+        }
+        FindGame m = new FindGame();
+        m.shouldFindGame = true;
+        GUIClient.clientConnection.send(new Packet(m));
+        findGameButton.setVisible(false);
+        cancelFindGameButton.setVisible(true);
+        focusCurrentButton();
+    }
+
+    public void customGameButtonPressed(ActionEvent actionEvent) {
+        setHasSelectedCustomGame(true);
+        buttonPressed();
+    }
+
+    public void settingsButtonPressed(ActionEvent actionEvent) {
+        setHasSelectedCustomGame(false);
+        buttonPressed();
+        GUIClient.primaryStage.setScene(GUIClient.viewMap.get("game").scene);
+    }
+
+    private boolean hasSelectedCustomGame = false;
+    private int currFocus = 0;
+    private int currFocusMin = 0;
+    private int currFocusMax = 2;
+
+    private void selectCurrentFocus() {
+        switch (currFocus) {
+            case 0:
+                if (findGameButton.isVisible()) {
+                    findGameButtonPressed(new ActionEvent());
+                } else {
+                    cancelFindGameButtonPressed(new ActionEvent());
+                }
+                break;
+            case 1:
+                customGameButtonPressed(new ActionEvent());
+                break;
+            case 2:
+                settingsButtonPressed(new ActionEvent());
+                break;
+            case 3:
+                startButtonPressed(new ActionEvent());
+                break;
+            case 4:
+                joinButtonPressed(new ActionEvent());
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void focusCurrentButton() {
+        if (currFocus < currFocusMin) {
+            currFocus = currFocusMax;
+        } else if (currFocus > currFocusMax) {
+            currFocus = currFocusMin;
+        }
+        switch (currFocus) {
+            case 0:
+                if (findGameButton.isVisible()) {
+                    findGameButton.requestFocus();
+                } else {
+                    cancelFindGameButton.requestFocus();
+                }
+                break;
+            case 1:
+                customGameButton.requestFocus();
+                break;
+            case 2:
+                settingsButton.requestFocus();
+                break;
+            case 3:
+                startButton.requestFocus();
+                break;
+            case 4:
+                joinButton.requestFocus();
+            default:
+                break;
+        }
+    }
+
+    public void onMouseEnteredFindGame(MouseEvent mouseEvent) {
+        if (!hasSelectedCustomGame) {
+            currFocus = 0;
+            focusCurrentButton();
+        }
+    }
+
+    public void onMouseEnteredCustomGame(MouseEvent mouseEvent) {
+        if (!hasSelectedCustomGame) {
+            currFocus = 1;
+            focusCurrentButton();
+        }
+    }
+
+    public void onMouseEnteredSettings(MouseEvent mouseEvent) {
+        if (!hasSelectedCustomGame) {
+            currFocus = 2;
+            focusCurrentButton();
+        }
+    }
+
+    public void priorityKeyPress(KeyEvent keyEvent) {
+        switch (keyEvent.getCode()) {
+            case UP:
+            case W: {
+                currFocus--;
+                focusCurrentButton();
+                break;
+            }
+            case DOWN:
+            case S: {
+                currFocus++;
+                focusCurrentButton();
+                break;
+            }
+            case D:
+            case SPACE:
+            case ENTER: {
+                selectCurrentFocus();
+                break;
+            }
+            case A: {
+                setHasSelectedCustomGame(false);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+
+    public void startButtonPressed(ActionEvent actionEvent) {
+        buttonPressed();
+    }
+
+    public void onMouseEnteredStartButton(MouseEvent mouseEvent) {
+        if (hasSelectedCustomGame) {
+            currFocus = 3;
+            focusCurrentButton();
+        }
+    }
+
+    public void onMouseEnteredJoinButton(MouseEvent mouseEvent) {
+        if (hasSelectedCustomGame) {
+            currFocus = 4;
+            focusCurrentButton();
+        }
+    }
+
+    public void joinButtonPressed(ActionEvent actionEvent) {
+        buttonPressed();
+    }
+
+    public void cancelFindGameButtonPressed(ActionEvent actionEvent) {
+        buttonPressed();
+        setHasSelectedCustomGame(false);
+
+        synchronized (GUIClient.clientConnection.isSearchingForGame) {
+            GUIClient.clientConnection.isSearchingForGame = false;
+        }
+        FindGame m = new FindGame();
+        m.shouldFindGame = false;
+        GUIClient.clientConnection.send(new Packet(m));
+
+        findGameButton.setVisible(true);
+        cancelFindGameButton.setVisible(false);
+        focusCurrentButton();
     }
 }
