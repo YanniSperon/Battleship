@@ -67,7 +67,8 @@ public class GUIClient extends Application {
             v.controller.postInit();
         });
 
-        primaryStage.setScene(viewMap.get("login").scene);
+        //primaryStage.setScene(viewMap.get("login").scene);
+        primaryStage.setScene(viewMap.get("game").scene);
         primaryStage.setTitle("Not logged in");
         primaryStage.show();
 
@@ -99,6 +100,7 @@ public class GUIClient extends Application {
             viewMap.get("game").scene = new Scene(root, WIDTH, HEIGHT, true);
         } catch (Exception e) {
             System.out.println("Missing resources!");
+            e.printStackTrace();
             System.exit(1);
         }
     }

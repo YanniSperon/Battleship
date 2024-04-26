@@ -3,6 +3,7 @@ import Data.Game;
 import Data.Group;
 import Data.User;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.UUID;
 import javafx.util.Pair;
 
 public class DataManager {
+    private final long XP_PER_GAME = 50;
     public final HashMap<UUID, Group> groups;
     public final HashMap<UUID, User> users;
     public final HashMap<Pair<UUID, UUID>, Chat> directMessages;
@@ -21,8 +23,8 @@ public class DataManager {
         groups = new HashMap<UUID, Group>();
         users = new HashMap<UUID, User>();
         directMessages = new HashMap<Pair<UUID, UUID>, Chat>();
-        groupChats = new HashMap<UUID, Chat>();
         games = new HashMap<Pair<UUID, UUID>, Game>();
+        groupChats = new HashMap<UUID, Chat>();
     }
 
     public UUID createNewUser() {
@@ -160,32 +162,71 @@ public class DataManager {
         return null;
     }
 
-    public Game getGame(UUID u1, UUID u2) {
-        if (u1 == null || u2 == null) {
+    public Game createGame(UUID p1, UUID p2) {
+        if (p1 == null || p2 == null) {
             return null;
         }
-        if (u1.compareTo(u2) < 0) {
-            UUID temp = u1;
-            u1 = u2;
-            u2 = temp;
+        Game g = new Game();
+        g.player1 = p1;
+        g.player2 = p2;
+
+        if (p1.compareTo(p2) < 0) {
+            UUID temp = p1;
+            p1 = p2;
+            p2 = temp;
         }
-        Pair<UUID, UUID> p = new Pair<UUID, UUID>(u1, u2);
+        Pair<UUID, UUID> p = new Pair<UUID, UUID>(p1, p2);
         if (!games.containsKey(p)) {
-            return games.put(p, new Game());
+            games.put(p, g);
         }
+        return g;
+    }
+
+    public void setGame(UUID p1, UUID p2, Game g) {
+        if (p1 == null || p2 == null) {
+            return;
+        }
+
+        if (p1.compareTo(p2) < 0) {
+            UUID temp = p1;
+            p1 = p2;
+            p2 = temp;
+        }
+        Pair<UUID, UUID> p = new Pair<UUID, UUID>(p1, p2);
+        games.put(p, g);
+    }
+
+    public Game getGame(UUID p1, UUID p2) {
+        if (p1 == null || p2 == null) {
+            return null;
+        }
+
+        if (p1.compareTo(p2) < 0) {
+            UUID temp = p1;
+            p1 = p2;
+            p2 = temp;
+        }
+        Pair<UUID, UUID> p = new Pair<UUID, UUID>(p1, p2);
         return games.get(p);
     }
 
-    public void setGame(UUID u1, UUID u2, Game game) {
-        if (u1 == null || u2 == null || game == null) {
-            return;
+    public Game leaveGame(UUID p1, UUID p2, UUID leavingPlayer) {
+        if (p1 == null || p2 == null || leavingPlayer == null || (!leavingPlayer.equals(p1) && !leavingPlayer.equals(p2))) {
+            return null; // Invalid state
         }
-        if (u1.compareTo(u2) < 0) {
-            UUID temp = u1;
-            u1 = u2;
-            u2 = temp;
+        Game g = getGame(p1, p2);
+        g.winner = g.player1.equals(leavingPlayer) ? Game.Player.PLAYER2 : Game.Player.PLAYER1;
+        g.turn = Game.Player.NONE;
+        g.gameEndReason = Game.GameEndReason.LEFT_GAME;
+        User winner = g.winner == Game.Player.PLAYER1 ? users.get(g.player1) : users.get(g.player2);
+        if (winner != null) {
+            winner.xp += XP_PER_GAME;
+            winner.wins++;
+            User loser = g.winner == Game.Player.PLAYER1 ? users.get(g.player2) : users.get(g.player1);
+            if (loser != null) {
+                loser.losses++;
+            }
         }
-        Pair<UUID, UUID> p = new Pair<UUID, UUID>(u1, u2);
-        games.put(p, game);
+        return g;
     }
 }

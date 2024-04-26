@@ -40,19 +40,20 @@ public class GUIServer extends Application {
     private void updateChat() {
         synchronized (serverConnection.dataManager) {
             chatListView.getItems().clear();
-            if (serverConnection.dataManager.isValidGroup(activeChat)) {
-                activeChatLabel.setText("Group \"" + serverConnection.dataManager.groups.get(activeChat).name + "\" chat");
-                for (Data.Message m : serverConnection.dataManager.getGroupChat(activeChat).messages) {
-                    String senderName = serverConnection.dataManager.users.get(m.sender).username;
-                    if (senderName == null || senderName.equals("Server")) {
-                        chatListView.getItems().add(m.content);
-                    } else {
-                        chatListView.getItems().add(senderName + ": " + m.content);
-                    }
-                }
-            } else if (serverConnection.dataManager.isValidUser(activeChat)) {
+//            if (serverConnection.dataManager.isValidGroup(activeChat)) {
+//                activeChatLabel.setText("Group \"" + serverConnection.dataManager.groups.get(activeChat).name + "\" chat");
+//                for (Data.Message m : serverConnection.dataManager.getGroupChat(activeChat).messages) {
+//                    String senderName = serverConnection.dataManager.users.get(m.sender).username;
+//                    if (senderName == null || senderName.equals("Server")) {
+//                        chatListView.getItems().add(m.content);
+//                    } else {
+//                        chatListView.getItems().add(senderName + ": " + m.content);
+//                    }
+//                }
+//            } else
+            if (serverConnection.dataManager.isValidUser(activeChat)) {
                 if (serverConnection.dataManager.isValidUser(activeChat2)) {
-                    activeChatLabel.setText("DM between \"" + serverConnection.dataManager.users.get(activeChat).username + "\" and \"" + serverConnection.dataManager.users.get(activeChat2).username + "\"");
+                    activeChatLabel.setText("Game between \"" + serverConnection.dataManager.users.get(activeChat).username + "\" and \"" + serverConnection.dataManager.users.get(activeChat2).username + "\"");
                     for (Data.Message m : serverConnection.dataManager.getDM(activeChat, activeChat2).messages) {
                         String senderName = serverConnection.dataManager.users.get(m.sender).username;
                         if (senderName == null || senderName.equals("Server")) {
@@ -62,7 +63,25 @@ public class GUIServer extends Application {
                         }
                     }
                 } else {
-                    activeChatLabel.setText("DM between \"" + serverConnection.dataManager.users.get(activeChat).username + "\" and (select another user)");
+                    activeChatLabel.setText("Global status (select another user to view game)");
+                    for (Data.Message m : serverConnection.dataManager.getGroupChat(serverConnection.globalChat.uuid).messages) {
+                        String senderName = serverConnection.dataManager.users.get(m.sender).username;
+                        if (senderName == null || senderName.equals("Server")) {
+                            chatListView.getItems().add(m.content);
+                        } else {
+                            chatListView.getItems().add(senderName + ": " + m.content);
+                        }
+                    }
+                }
+            } else {
+                activeChatLabel.setText("Global status (select two users to view game)");
+                for (Data.Message m : serverConnection.dataManager.getGroupChat(serverConnection.globalChat.uuid).messages) {
+                    String senderName = serverConnection.dataManager.users.get(m.sender).username;
+                    if (senderName == null || senderName.equals("Server")) {
+                        chatListView.getItems().add(m.content);
+                    } else {
+                        chatListView.getItems().add(senderName + ": " + m.content);
+                    }
                 }
             }
             if (chatListView.getItems().isEmpty()) {
@@ -131,23 +150,18 @@ public class GUIServer extends Application {
         Label centerLLabel = new Label("Log");
         centerLLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
         centerLLabel.setAlignment(Pos.CENTER);
-        VBox centerLVbox = new VBox(10, centerLLabel, logListView);
-        centerLVbox.setAlignment(Pos.CENTER);
+        VBox leftVBox = new VBox(10, centerLLabel, logListView);
+        leftVBox.setAlignment(Pos.CENTER);
+        pane.setLeft(leftVBox);
 
-        activeChatLabel = new Label("Group \"Global\" chat");
+        activeChatLabel = new Label("Group status (select two users to view game)");
         activeChatLabel.setAlignment(Pos.CENTER);
         activeChatLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
-        VBox centerRVbox = new VBox(10, activeChatLabel, chatListView);
-        centerRVbox.setAlignment(Pos.CENTER);
+        VBox centerVBox = new VBox(10, activeChatLabel, chatListView);
+        centerVBox.setAlignment(Pos.CENTER);
+        pane.setCenter(centerVBox);
 
-        HBox centerHbox = new HBox(0, centerLVbox, centerRVbox);
-        centerHbox.setAlignment(Pos.CENTER);
-        HBox.setHgrow(centerLVbox, Priority.ALWAYS);
-        HBox.setHgrow(centerRVbox, Priority.ALWAYS);
-        centerHbox.setPrefWidth(400);
-        pane.setCenter(centerHbox);
-
-        Label rightLabel = new Label("Users (Select two to view DM)");
+        Label rightLabel = new Label("Users (Select two to view game)");
         rightLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
         rightLabel.setAlignment(Pos.CENTER);
         VBox rightVbox = new VBox(10, rightLabel, usersListView);
@@ -181,21 +195,6 @@ public class GUIServer extends Application {
         rightVbox.setAlignment(Pos.CENTER);
         pane.setRight(rightVbox);
 
-        Label leftLabel = new Label("Groups (Click to view chat)");
-        leftLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
-        leftLabel.setAlignment(Pos.CENTER);
-        VBox leftVbox = new VBox(10, leftLabel, groupsListView);
-        groupsListView.setOnMouseClicked((e) -> {
-            String selectedItem = groupsListView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && !selectedItem.isEmpty()) {
-                activeChat = serverConnection.dataManager.getByGroupName(selectedItem);
-                activeChat2 = null;
-                updateChat();
-            }
-        });
-        leftVbox.setAlignment(Pos.CENTER);
-
-        pane.setLeft(leftVbox);
         pane.setStyle("-fx-font-family: 'serif'");
         return new Scene(pane, 1400, 800);
     }

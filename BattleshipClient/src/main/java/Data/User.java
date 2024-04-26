@@ -8,6 +8,8 @@ public class User implements Serializable {
     public UUID uuid;
     public String username = null;
     public long xp = 0;
+    public long wins = 0;
+    public long losses = 0;
     public ArrayList<UUID> blockedUsers = new ArrayList<UUID>();
 
     public User(UUID uuid) {

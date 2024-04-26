@@ -85,7 +85,7 @@ public class HomeController implements CustomController, Initializable {
 
     @Override
     public void postInit() {
-        Scene s = GUIClient.viewMap.get("home").scene;
+        Scene s = levelProgressBar.getScene();
         if (s == null) {
             System.out.println("Scene is null");
         } else {

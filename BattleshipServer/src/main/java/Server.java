@@ -14,10 +14,10 @@ public class Server {
     private final Consumer<Serializable> serverLogCallback;
     public final DataManager dataManager;
     private final HashMap<UUID, ClientThread> clients;
-    private final HashMap<String, Game> privateGames;
     public final User serverUser;
     public final Group globalChat;
     private final LinkedList<UUID> gameQueue;
+    private final HashMap<String, Game> pendingPrivateGames;
 
 
     Server(Consumer<Serializable> call) {
@@ -35,7 +35,7 @@ public class Server {
         globalChat.name = "Global";
         clients.put(serverUserID, new ClientThread());
         gameQueue = new LinkedList<UUID>();
-        privateGames = new HashMap<String, Game>();
+        pendingPrivateGames = new HashMap<String, Game>();
     }
 
     private String getLogClientDescriptor(UUID id) {
@@ -318,6 +318,9 @@ public class Server {
                         // At least two players are in queue, take the two at the front
                         UUID firstID = gameQueue.pollLast();
                         UUID secondID = gameQueue.pollLast();
+
+                        Game newGame = dataManager.createGame(firstID, secondID);
+
                         GameFound replyPayload = new GameFound();
                         replyPayload.user1 = firstID;
                         replyPayload.user2 = secondID;
@@ -328,13 +331,13 @@ public class Server {
                         UpdateGame updateGamePayload = new UpdateGame();
                         updateGamePayload.user1 = firstID;
                         updateGamePayload.user2 = secondID;
-                        updateGamePayload.game = dataManager.getGame(firstID, secondID);
-                        updateGamePayload.game.player1 = firstID;
-                        updateGamePayload.game.player2 = secondID;
-                        updateGamePayload.game.turn = Game.Player.PLAYER1;
+                        updateGamePayload.game = newGame;
                         Packet updateGamePacket = new Packet(updateGamePayload);
-                        clients.get(firstID).sendPacket(updateGamePacket);
-                        clients.get(secondID).sendPacket(updateGamePacket);
+                        updateGameMembers(newGame, updateGamePacket);
+
+                        serverLogCallback.accept(getLogClientDescriptor(firstID) + " looking for game, found with " + getLogClientDescriptor(secondID));
+                    } else {
+                        serverLogCallback.accept(getLogClientDescriptor(id) + " looking for game");
                     }
                 }
             } else {
@@ -345,27 +348,29 @@ public class Server {
 
     private void executeLeaveGame(UUID id, Packet p) {
         LeaveGame request = (LeaveGame) p.data;
-        Game g = dataManager.getGame(request.otherUser, id);
-        boolean isPlayer1 = g.player1.equals(id);
-        if (isPlayer1 || g.player2.equals(id)) {
+        Game g = dataManager.leaveGame(id, request.otherUser, id);
+        if (g != null) {
             UpdateGame gameEndingPayload = new UpdateGame();
-            g.winner = isPlayer1 ? Game.Player.PLAYER2 : Game.Player.PLAYER1;
-            g.turn = Game.Player.NONE;
             gameEndingPayload.game = g;
-            clients.get(g.player1).sendPacket(new Packet(gameEndingPayload));
-            clients.get(g.player2).sendPacket(new Packet(gameEndingPayload));
+            gameEndingPayload.user1 = g.player1;
+            gameEndingPayload.user2 = g.player2;
 
-            dataManager.users.get(isPlayer1 ? g.player2 : g.player1).xp += 50;
+            updateGameMembers(g, new Packet(gameEndingPayload));
+
+            // Update user list since xp should be awarded
             sendUpdatedUserList();
+
+            serverLogCallback.accept(getLogClientDescriptor(id) + " left an active game, automatic loss");
         }
     }
 
     private static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    private static SecureRandom rnd = new SecureRandom();
+    private static final SecureRandom rnd = new SecureRandom();
+    private static final int CODE_SIZE = 8;
 
-    private String generateRandomCode(int len) {
-        StringBuilder sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++) {
+    private String generateRandomCode() {
+        StringBuilder sb = new StringBuilder(CODE_SIZE);
+        for (int i = 0; i < CODE_SIZE; i++) {
             sb.append(AB.charAt(rnd.nextInt(AB.length())));
         }
         return sb.toString();
@@ -373,13 +378,19 @@ public class Server {
 
     private void executeStartPrivateGame(UUID id, Packet p) {
         StartPrivateGame request = (StartPrivateGame) p.data;
-        String code = generateRandomCode(8);
+
+        String code = generateRandomCode();
         Game g = new Game();
-        privateGames.put(code, g);
         g.player1 = id;
+        synchronized (pendingPrivateGames) {
+            pendingPrivateGames.put(code, g);
+        }
+
         StartPrivateGameResult resultPayload = new StartPrivateGameResult();
         resultPayload.joinableID = code;
         clients.get(id).sendPacket(new Packet(resultPayload));
+
+        serverLogCallback.accept(getLogClientDescriptor(id) + " started a private game with code \"" + code + "\"");
     }
 
     private boolean isValidLocation(ArrayList<Piece> pieces, Coordinate c) {
@@ -447,6 +458,7 @@ public class Server {
                 res.opponent = request.opponent;
                 res.status = true;
                 clients.get(id).sendPacket(new Packet(res));
+                serverLogCallback.accept(getLogClientDescriptor(id) + " placed a piece in their game with " + getLogClientDescriptor(g.player2));
                 return;
             }
         } else if (g.player2.equals(id)) {
@@ -458,6 +470,7 @@ public class Server {
                 res.opponent = request.opponent;
                 res.status = true;
                 clients.get(id).sendPacket(new Packet(res));
+                serverLogCallback.accept(getLogClientDescriptor(id) + " placed a piece in their game with " + getLogClientDescriptor(g.player1));
                 return;
             }
         }
@@ -467,6 +480,7 @@ public class Server {
         res.opponent = request.opponent;
         res.status = false;
         clients.get(id).sendPacket(new Packet(res));
+        serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to place a piece, but it failed");
     }
 
     private void executeMakeMove(UUID id, Packet p) {
@@ -475,6 +489,7 @@ public class Server {
         if (g.user1Pieces.size() == 5 && g.user2Pieces.size() == 5) {
             // Only allow moves here since this means both players have placed their pieces down
             //TODO
+            serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to make a move");
             //dataManager.users.get(winner).xp += 50;
             //sendUpdatedUserList();
         }
@@ -482,10 +497,13 @@ public class Server {
 
     private void executeJoinPrivateGame(UUID id, Packet p) {
         JoinPrivateGame request = (JoinPrivateGame) p.data;
-        if (privateGames.containsKey(request.code)) {
-            Game g = privateGames.get(request.code);
+        if (pendingPrivateGames.containsKey(request.code)) {
+            Game g = null;
+            synchronized (pendingPrivateGames) {
+                g = pendingPrivateGames.remove(request.code);
+            }
             g.player2 = id;
-            g.turn = Game.Player.PLAYER1;
+            dataManager.setGame(g.player1, g.player2, g);
 
             JoinPrivateGameResult resultPayload = new JoinPrivateGameResult();
             resultPayload.otherUser = g.player1;
@@ -498,13 +516,16 @@ public class Server {
             replyPayloadForBoth.game = g;
             Packet replyPacketForBoth = new Packet(replyPayloadForBoth);
 
-            clients.get(g.player1).sendPacket(replyPacketForBoth);
-            clients.get(g.player2).sendPacket(replyPacketForBoth);
+            updateGameMembers(g, replyPacketForBoth);
+
+            serverLogCallback.accept(getLogClientDescriptor(id) + " joined private game with code \"" + request.code + "\"");
         } else {
             JoinPrivateGameResult resultPayload = new JoinPrivateGameResult();
             resultPayload.otherUser = null;
             resultPayload.success = false;
             clients.get(id).sendPacket(new Packet(resultPayload));
+
+            serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to join a private game with code \"" + request.code + "\" but no game was found");
         }
     }
 
@@ -633,6 +654,17 @@ public class Server {
         }
     }
 
+    public void updateGameMembers(Game g, Packet p) {
+        Server.ClientThread t1 = clients.get(g.player1);
+        if (t1 != null) {
+            t1.sendPacket(p);
+        }
+        Server.ClientThread t2 = clients.get(g.player2);
+        if (t2 != null) {
+            t2.sendPacket(p);
+        }
+    }
+
     public void updateClients(Packet p) {
         synchronized (clients) {
             clients.forEach((key, value) -> {
@@ -694,8 +726,8 @@ public class Server {
             dataManager.getGroupChat(globalChat.uuid).messages.add(leaveMessage);
 
             dataManager.games.forEach((k, v) -> {
-                boolean isPlayer1 = v.player1.equals(id);
-                if (isPlayer1 || v.player2.equals(id)) {
+                boolean isPlayer1 = v.player1 != null && v.player1.equals(id);
+                if (isPlayer1 || (v.player2 != null && v.player2.equals(id))) {
                     UpdateGame gameEndingPayload = new UpdateGame();
                     gameEndingPayload.game = v;
                     gameEndingPayload.game.winner = isPlayer1 ? Game.Player.PLAYER2 : Game.Player.PLAYER1;

@@ -13,9 +13,18 @@ public class Game implements Serializable {
     public enum Player {
         PLAYER1, PLAYER2, NONE
     }
+    public enum GameEndReason {
+        LEFT_GAME, WINNER, NONE
+    }
     public Player winner = Player.NONE;
-    public Player turn = Player.NONE;
+    public Player turn = Player.PLAYER1;
+    public GameEndReason gameEndReason = GameEndReason.NONE;
 
     public Game() {
+    }
+
+    @Override
+    public String toString() {
+        return "Game(P1: \"" + player1.toString() + "\" P2: \"" + player2.toString() + "\" winner: \"" + winner.toString() + "\")";
     }
 }
