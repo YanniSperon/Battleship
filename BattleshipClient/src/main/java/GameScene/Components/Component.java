@@ -1,12 +1,17 @@
 package GameScene.Components;
 
 import GameScene.GameObject;
+import javafx.geometry.Point3D;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 
 public class Component {
+    public static final Point3D FORWARD = new Point3D(0.0, 0.0, 1.0);
+    public static final Point3D UP = new Point3D(0.0, -1.0, 0.0);
+    public static final Point3D RIGHT = new Point3D(1.0, 0.0, 0.0);
     public enum ComponentType {
-        ANIMATION_CONTROLLER, CAMERA, MESH3D, NONE
+        ANIMATION_CONTROLLER, FP_CAMERA, MESH3D, MOVABLE, BOX3D, POINT_LIGHT, AMBIENT_LIGHT, ORBITAL_CAMERA, FOLLOW, NONE
     }
 
     // Any arbitrary GameObject component
@@ -14,11 +19,10 @@ public class Component {
     public ComponentType type = ComponentType.NONE;
 
     public Component() {
-        onInit();
     }
 
     // Returns true if it consumes the input
-    public boolean onKeyPressed(KeyEvent keyEvent) {
+    public boolean onKeyEvent(KeyEvent keyEvent) {
         return false;
     }
 
@@ -27,9 +31,9 @@ public class Component {
         return false;
     }
 
-    // Called when a component is initialized
-    public void onInit() {
-
+    // Returns true if it consumes the input
+    public boolean onScrollEvent(ScrollEvent scrollEvent) {
+        return false;
     }
 
     // Called when the component is removed from a game object

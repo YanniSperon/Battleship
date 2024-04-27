@@ -11,8 +11,7 @@ public class AnimationControllerComponent extends Component {
     private boolean shouldLoop = false;
     private boolean isPlaying = false;
 
-    @Override
-    public void onInit() {
+    public AnimationControllerComponent() {
         this.type = ComponentType.ANIMATION_CONTROLLER;
     }
 

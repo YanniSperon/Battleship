@@ -81,6 +81,11 @@ public class LoginController implements CustomController, Initializable {
 
     }
 
+    @Override
+    public void onRenderUpdate(double deltaTime) {
+
+    }
+
     String cleanUsernameString(String original)
     {
         return original.trim().replace(" ", "").toUpperCase().replaceAll("[^A-Z0-9]", "");

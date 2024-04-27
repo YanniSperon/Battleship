@@ -7,15 +7,19 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Scanner;
 
-public class MeshLoader {
+public class MeshManager {
     public static HashMap<String, Mesh3D> regularModelCache = new HashMap<String, Mesh3D>();
 
     public static HashMap<String, AnimatedMesh3D> animatedModelCache = new HashMap<String, AnimatedMesh3D>();
 
+    // Expects fileName to be the name of a file in the meshes directory in the resources folder
+    public static Mesh3D load(String fileName) {
+        return load(fileName, true);
+    }
+
     // Expects fileName to be the name of a file in the meshes directory in the resources directory
-    public static Mesh3D load(String fileName, boolean shouldCache) {
+    private static Mesh3D load(String fileName, boolean shouldCache) {
         if (shouldCache && regularModelCache.containsKey(fileName)) {
             return regularModelCache.get(fileName);
         }
@@ -24,34 +28,41 @@ public class MeshLoader {
         TriangleMesh mesh = new TriangleMesh();
         mesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
         try {
-            reader = new BufferedReader(new InputStreamReader(MeshLoader.class.getResourceAsStream("/meshes/" + fileName)));
+            long startTime = System.nanoTime();
+            System.out.println("Loading mesh \"" + fileName + "\":");
+            reader = new BufferedReader(new InputStreamReader(MeshManager.class.getResourceAsStream("/meshes/" + fileName)));
             String line = reader.readLine();
+            String[] tokens;
+            int[] tempBuf = new int[3];
+            int currToken = 0;
+
             PrimitiveFloatArrayList vertices = new PrimitiveFloatArrayList();
             PrimitiveFloatArrayList normals = new PrimitiveFloatArrayList();
             PrimitiveFloatArrayList textureCoords = new PrimitiveFloatArrayList();
             PrimitiveIntArrayList faces = new PrimitiveIntArrayList();
+
             while (line != null) {
-                Scanner lineScanner = new Scanner(line);
-                String lineType = lineScanner.next();
-                switch (lineType) {
+                tokens = line.split("[ /]");
+                currToken = 0;
+                switch (tokens[currToken++]) {
                     case "v": {
                         // Vertex
-                        vertices.add(lineScanner.nextFloat());
-                        vertices.add(lineScanner.nextFloat());
-                        vertices.add(lineScanner.nextFloat());
+                        vertices.add(Float.parseFloat(tokens[currToken++]));
+                        vertices.add(Float.parseFloat(tokens[currToken++]));
+                        vertices.add(Float.parseFloat(tokens[currToken]));
                         break;
                     }
                     case "vn": {
                         // Vertex Normal
-                        normals.add(lineScanner.nextFloat());
-                        normals.add(lineScanner.nextFloat());
-                        normals.add(lineScanner.nextFloat());
+                        normals.add(Float.parseFloat(tokens[currToken++]));
+                        normals.add(Float.parseFloat(tokens[currToken++]));
+                        normals.add(Float.parseFloat(tokens[currToken]));
                         break;
                     }
                     case "vt": {
                         // Texture coordinate
-                        textureCoords.add(lineScanner.nextFloat());
-                        textureCoords.add(lineScanner.nextFloat());
+                        textureCoords.add(Float.parseFloat(tokens[currToken++]));
+                        textureCoords.add(1.0f - Float.parseFloat(tokens[currToken]));
                         break;
                     }
                     case "o": {
@@ -60,12 +71,12 @@ public class MeshLoader {
                     }
                     case "mtllib": {
                         // Material library definition, possibly use
-                        String materialPath = lineScanner.next();
+                        String materialPath = tokens[currToken++];
                         break;
                     }
                     case "usemtl": {
                         // Material usage specification, possibly use
-                        String materialToUse = lineScanner.next();
+                        String materialToUse = tokens[currToken++];
                         break;
                     }
                     case "l": {
@@ -75,56 +86,33 @@ public class MeshLoader {
                     case "s": {
                         // Defines smooth shading as on or off
                         boolean smoothShading = false;
-                        if (lineScanner.hasNextInt()) {
-                            smoothShading = lineScanner.nextInt() == 1;
-                        } else {
-                            String state = lineScanner.next();
-                            if (state.equals("on") || state.equals("true")) {
-                                smoothShading = true;
-                            } // Otherwise keep default value
-                        }
-                        // Potentially do something with smoothShading value
                         break;
                     }
                     case "f": {
                         // Face parsing
-                        String v1 = lineScanner.next();
-                        String v2 = lineScanner.next();
-                        String v3 = lineScanner.next();
-                        Scanner v1Scanner = new Scanner(v1);
-                        Scanner v2Scanner = new Scanner(v2);
-                        Scanner v3Scanner = new Scanner(v3);
-                        v1Scanner.useDelimiter("/");
-                        v2Scanner.useDelimiter("/");
-                        v3Scanner.useDelimiter("/");
                         // For now, expect obj format to use vertex/normal/texcoord per triangle point
 
                         // First point
-                        int vertexInd1 = v1Scanner.nextInt() - 1; // Vertex index
-                        int textureCoordInd1 = v1Scanner.nextInt() - 1; // Texture coord index
-                        int normalInd1 = v1Scanner.nextInt() - 1; // Normal index
+                        tempBuf[0] = Integer.parseInt(tokens[currToken++]) - 1; // Vertex 1
+                        tempBuf[1] = Integer.parseInt(tokens[currToken++]) - 1; // Texture coord 1
+                        tempBuf[2] = Integer.parseInt(tokens[currToken++]) - 1; // Normal 1
+                        faces.add(tempBuf[0]);
+                        faces.add(tempBuf[2]);
+                        faces.add(tempBuf[1]);
 
-                        faces.add(vertexInd1);
-                        faces.add(normalInd1);
-                        faces.add(textureCoordInd1);
+                        tempBuf[0] = Integer.parseInt(tokens[currToken++]) - 1; // Vertex 2
+                        tempBuf[1] = Integer.parseInt(tokens[currToken++]) - 1; // Texture coord 2
+                        tempBuf[2] = Integer.parseInt(tokens[currToken++]) - 1; // Normal 2
+                        faces.add(tempBuf[0]);
+                        faces.add(tempBuf[2]);
+                        faces.add(tempBuf[1]);
 
-                        // Second point
-                        int vertexInd2 = v2Scanner.nextInt() - 1; // Vertex index
-                        int textureCoordInd2 = v2Scanner.nextInt() - 1; // Texture coord index
-                        int normalInd2 = v2Scanner.nextInt() - 1; // Normal index
-
-                        faces.add(vertexInd2);
-                        faces.add(normalInd2);
-                        faces.add(textureCoordInd2);
-
-                        // Third point
-                        int vertexInd3 = v3Scanner.nextInt() - 1; // Vertex index
-                        int textureCoordInd3 = v3Scanner.nextInt() - 1; // Texture coord index
-                        int normalInd3 = v3Scanner.nextInt() - 1; // Normal index
-
-                        faces.add(vertexInd3);
-                        faces.add(normalInd3);
-                        faces.add(textureCoordInd3);
+                        tempBuf[0] = Integer.parseInt(tokens[currToken++]) - 1; // Vertex 3
+                        tempBuf[1] = Integer.parseInt(tokens[currToken++]) - 1; // Texture coord 3
+                        tempBuf[2] = Integer.parseInt(tokens[currToken++]) - 1; // Normal 3
+                        faces.add(tempBuf[0]);
+                        faces.add(tempBuf[2]);
+                        faces.add(tempBuf[1]);
                         break;
                     }
                 }
@@ -132,6 +120,9 @@ public class MeshLoader {
 
                 line = reader.readLine();
             }
+            long endTime = System.nanoTime();
+            System.out.println("    Finished reading file in " + ((endTime - startTime) / 1000000.0) + "ms");
+
             vertices.trim();
             normals.trim();
             textureCoords.trim();
@@ -142,11 +133,8 @@ public class MeshLoader {
             mesh.getTexCoords().setAll(textureCoords.data);
             mesh.getFaces().setAll(faces.data);
 
-            System.out.println("Loaded mesh \"" + fileName + "\":");
             System.out.println("    Number of vertices: " + mesh.getPoints().size());
-            System.out.println("    Number of normals: " + mesh.getNormals().size());
-            System.out.println("    Number of texture coordinates: " + mesh.getTexCoords().size());
-            System.out.println("    Number of faces: " + mesh.getFaces().size());
+            System.out.println("    Number of triangles: " + mesh.getFaces().size());
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -182,16 +170,18 @@ public class MeshLoader {
                     mesh.setInitialMesh(load(fileName, false).mesh);
                     isFirst = false;
                 } else {
-                    reader = new BufferedReader(new InputStreamReader(MeshLoader.class.getResourceAsStream("/meshes/" + fileName)));
+                    reader = new BufferedReader(new InputStreamReader(MeshManager.class.getResourceAsStream("/meshes/" + fileName)));
                     String line = reader.readLine();
                     PrimitiveFloatArrayList vertices = new PrimitiveFloatArrayList();
+                    String[] tokens;
+                    int currToken = 0;
                     while (line != null) {
-                        Scanner lineScanner = new Scanner(line);
-                        String lineType = lineScanner.next();
-                        if (lineType.equals("v")) {// Vertex
-                            vertices.add(lineScanner.nextFloat());
-                            vertices.add(lineScanner.nextFloat());
-                            vertices.add(lineScanner.nextFloat());
+                        currToken = 0;
+                        tokens = line.split(" ");
+                        if (tokens[currToken++].equals("v")) {// Vertex
+                            vertices.add(Float.parseFloat(tokens[currToken++]));
+                            vertices.add(Float.parseFloat(tokens[currToken++]));
+                            vertices.add(Float.parseFloat(tokens[currToken]));
                         }
 
                         line = reader.readLine();

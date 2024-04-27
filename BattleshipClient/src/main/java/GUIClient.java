@@ -2,6 +2,9 @@
 import java.util.HashMap;
 import java.util.UUID;
 
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -10,6 +13,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javafx.util.Duration;
 
 public class GUIClient extends Application {
     private static final int WIDTH = 800;
@@ -72,6 +76,11 @@ public class GUIClient extends Application {
         primaryStage.setTitle("Not logged in");
         primaryStage.show();
 
+
+        currentTime = System.nanoTime();
+        Timeline timeline = new Timeline(new KeyFrame(Duration.millis(16.66666666), e -> onRenderUpdate()));
+        timeline.setCycleCount(Animation.INDEFINITE);
+        timeline.playFromStart();
     }
 
     public void createLoginGUI() {
@@ -103,5 +112,18 @@ public class GUIClient extends Application {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private long currentTime = 0;
+    public void onRenderUpdate() {
+        // Compute deltaTime
+        long newTime = System.nanoTime();
+        long timeDiff = newTime - currentTime;
+        double deltaTime = timeDiff * 0.000000001;
+        currentTime = newTime;
+
+        viewMap.forEach((k,v) -> {
+            v.controller.onRenderUpdate(deltaTime);
+        });
     }
 }

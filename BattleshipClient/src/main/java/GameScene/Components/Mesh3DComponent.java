@@ -1,22 +1,24 @@
 package GameScene.Components;
 
+import Assets.MaterialManager;
 import Assets.Mesh3D;
+import Assets.MeshManager;
 import javafx.geometry.Bounds;
+import javafx.scene.Node;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.PickResult;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.MeshView;
 
-public class Mesh3DComponent extends Component {
+import java.util.ArrayList;
+
+public class Mesh3DComponent extends MovableComponent {
     public Mesh3D mesh3D = null;
     public MeshView meshView = null;
-    public boolean isSelected = false;
 
-    @Override
-    public void onInit() {
+    public Mesh3DComponent() {
         this.type = ComponentType.MESH3D;
     }
 
@@ -28,106 +30,51 @@ public class Mesh3DComponent extends Component {
     }
 
     @Override
-    public void onRenderUpdate(double deltaTime) {
-        Bounds b = getBounds();
-        if (isPosXPressed) {
-            System.out.println("Moving pos x with width: " + b.getWidth());
-            gameObject.setTranslation(gameObject.getTranslationX() + deltaTime * b.getWidth() * 100.0, gameObject.getTranslationY(), gameObject.getTranslationZ());
-        }
-        if (isNegXPressed) {
-            gameObject.setTranslation(gameObject.getTranslationX() - deltaTime * b.getWidth() * 100.0, gameObject.getTranslationY(), gameObject.getTranslationZ());
-        }
-        if (isPosYPressed) {
-            gameObject.setTranslation(gameObject.getTranslationX(), gameObject.getTranslationY() + deltaTime * b.getHeight() * 100.0, gameObject.getTranslationZ());
-        }
-        if (isNegYPressed) {
-            gameObject.setTranslation(gameObject.getTranslationX(), gameObject.getTranslationY() - deltaTime * b.getHeight() * 100.0, gameObject.getTranslationZ());
-        }
-        if (isPosZPressed) {
-            gameObject.setTranslation(gameObject.getTranslationX(), gameObject.getTranslationY(), gameObject.getTranslationZ() + deltaTime * b.getDepth() * 100.0);
-        }
-        if (isNegZPressed) {
-            gameObject.setTranslation(gameObject.getTranslationX(), gameObject.getTranslationY(), gameObject.getTranslationZ() - deltaTime * b.getDepth() * 100.0);
-        }
-    }
-
-    boolean isPosXPressed = false;
-    boolean isNegXPressed = false;
-    boolean isPosYPressed = false;
-    boolean isNegYPressed = false;
-    boolean isPosZPressed = false;
-    boolean isNegZPressed = false;
-    @Override
-    public boolean onKeyPressed(KeyEvent keyEvent) {
-        if (isSelected) {
-            if (keyEvent.isShiftDown()) {
-                if (keyEvent.getEventType() == KeyEvent.KEY_PRESSED) {
-                    switch (keyEvent.getCode()) {
-                        case W:
-                            isPosXPressed = true;
-                            break;
-                        case S:
-                            isNegXPressed = true;
-                            break;
-                        case A:
-                            isPosYPressed = true;
-                            break;
-                        case D:
-                            isNegYPressed = true;
-                            break;
-                        case Q:
-                            isNegZPressed = true;
-                            break;
-                        case E:
-                            isPosZPressed = true;
-                            break;
-                    }
-                } else if (keyEvent.getEventType() == KeyEvent.KEY_RELEASED) {
-                    switch (keyEvent.getCode()) {
-                        case W:
-                            isPosXPressed = false;
-                            break;
-                        case S:
-                            isNegXPressed = false;
-                            break;
-                        case A:
-                            isPosYPressed = false;
-                            break;
-                        case D:
-                            isNegYPressed = false;
-                            break;
-                        case Q:
-                            isNegZPressed = false;
-                            break;
-                        case E:
-                            isPosZPressed = false;
-                            break;
-                    }
-                }
+    public boolean onKeyEvent(KeyEvent keyEvent) {
+        if (keyEvent.getEventType() == KeyEvent.KEY_PRESSED) {
+            if (keyEvent.getCode() == KeyCode.F) {
                 return true;
             }
-            return false;
         }
         return false;
     }
 
     @Override
-    public boolean onMouseEvent(MouseEvent mouseEvent) {
-        if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
-            PickResult res = mouseEvent.getPickResult();
-            System.out.println("res " + res);
-            if (res.getIntersectedNode() != null && res.getIntersectedNode().equals(meshView) && !isSelected) {
-                meshView.setMaterial(new PhongMaterial(Color.RED));
-                isSelected = true;
-            } else {
-                meshView.setMaterial(new PhongMaterial(Color.LIGHTGRAY));
-                isSelected = false;
-            }
-        }
-        return false;
-    }
-
     public Bounds getBounds() {
         return meshView.getBoundsInLocal();
+    }
+
+    public MeshView selector = null;
+
+    @Override
+    public void onSelected() {
+        super.onSelected();
+        if (selector == null) {
+            selector = new MeshView(MeshManager.load("Selector.obj").mesh);
+            selector.setMaterial(MaterialManager.load("Selector.mat"));
+            selector.setScaleX(meshView.boundsInLocalProperty().getValue().getWidth() * 0.6);
+            selector.setScaleY(meshView.boundsInLocalProperty().getValue().getHeight() * 0.6);
+            selector.setScaleZ(meshView.boundsInLocalProperty().getValue().getDepth() * 0.6);
+            selector.setTranslateX(meshView.boundsInLocalProperty().getValue().getCenterX());
+            selector.setTranslateY(meshView.boundsInLocalProperty().getValue().getCenterY());
+            selector.setTranslateZ(meshView.boundsInLocalProperty().getValue().getCenterZ());
+            selector.setMouseTransparent(true);
+        }
+        gameObject.childrenHolder.getChildren().add(selector);
+    }
+
+    @Override
+    public void onDeselected() {
+        super.onDeselected();
+        if (selector != null) {
+            gameObject.childrenHolder.getChildren().remove(selector);
+        }
+    }
+
+    @Override
+    protected ArrayList<Node> getPickableComponents() {
+        ArrayList<Node> pickables = new ArrayList<Node>();
+        pickables.add(meshView);
+        return pickables;
     }
 }

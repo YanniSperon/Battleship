@@ -1,12 +1,11 @@
 package GameScene;
 
-import Assets.Mesh3D;
 import GameScene.Components.Component;
-import javafx.geometry.Bounds;
+import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.shape.MeshView;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.transform.*;
 
 import java.util.ArrayList;
@@ -25,7 +24,7 @@ public class GameObject {
 
     public GameObject() {
         childrenHolder = new Group();
-        this.childrenHolder.getTransforms().addAll(translate, rotateX, rotateY, rotateZ, scale);
+        this.childrenHolder.getTransforms().addAll(translate, rotateY, rotateX, rotateZ, scale);
         id = UUID.randomUUID();
     }
 
@@ -48,9 +47,9 @@ public class GameObject {
     }
 
     // Returns true if it consumes the input
-    public boolean onKeyPressed(KeyEvent keyEvent) {
+    public boolean onKeyEvent(KeyEvent keyEvent) {
         for (Component c : components) {
-            if (c.onKeyPressed(keyEvent)) {
+            if (c.onKeyEvent(keyEvent)) {
                 return true;
             }
         }
@@ -67,10 +66,25 @@ public class GameObject {
         return false;
     }
 
+    public boolean onScrollEvent(ScrollEvent scrollEvent) {
+        for (Component c : components) {
+            if (c.onScrollEvent(scrollEvent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void setTranslation(double x, double y, double z) {
         translate.setX(x);
         translate.setY(y);
         translate.setZ(z);
+    }
+
+    public void setTranslation(Point3D p) {
+        translate.setX(p.getX());
+        translate.setY(p.getY());
+        translate.setZ(p.getZ());
     }
 
     public double getTranslationX() {
@@ -138,5 +152,13 @@ public class GameObject {
             }
         }
         return null;
+    }
+
+    public Transform getRotationTransform() {
+        return rotateY.createConcatenation(rotateX.createConcatenation(rotateZ));
+    }
+
+    public Point3D getTranslation() {
+        return new Point3D(translate.getX(), translate.getY(), translate.getZ());
     }
 }

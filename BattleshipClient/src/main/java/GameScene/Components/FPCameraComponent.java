@@ -8,22 +8,20 @@ import javafx.scene.transform.Transform;
 
 import static com.sun.javafx.util.Utils.clamp;
 
-public class CameraComponent extends Component {
+public class FPCameraComponent extends Component {
     public PerspectiveCamera camera;
 
-    @Override
-    public void onInit() {
-        this.type = ComponentType.CAMERA;
+    public FPCameraComponent() {
+        this.type = ComponentType.FP_CAMERA;
     }
 
     @Override
     public void onAdded() {
-        this.type = ComponentType.CAMERA;
         camera = new PerspectiveCamera(true);
-        camera.setNearClip(1.0);
-        camera.setFarClip(100000.0);
+        camera.setNearClip(0.05);
+        camera.setFarClip(1000.0);
         camera.setFieldOfView(90);
-        camera.setVerticalFieldOfView(false);
+        camera.setVerticalFieldOfView(true);
         gameObject.childrenHolder.getChildren().add(camera);
     }
 
@@ -53,9 +51,9 @@ public class CameraComponent extends Component {
 
     public double mouseSensitivityX = 1.0;
     public double mouseSensitivityY = 1.0;
-    public double movementSpeed = 1000.0;
+    public double movementSpeed = 1.0;
     @Override
-    public boolean onKeyPressed(KeyEvent keyEvent) {
+    public boolean onKeyEvent(KeyEvent keyEvent) {
         if (keyEvent.getEventType() == KeyEvent.KEY_PRESSED) {
             switch (keyEvent.getCode()) {
                 case W:
@@ -106,21 +104,15 @@ public class CameraComponent extends Component {
             mouseY = mouseEvent.getSceneY();
 
             if (mouseEvent.isPrimaryButtonDown()) {
-                System.out.println("Current rotation: (" + gameObject.getXRotation() + ", " + gameObject.getYRotation() + ", " + gameObject.getZRotation() + ")");
-                gameObject.setXRotation(clamp(-85, ((gameObject.getXRotation() - (mouseY - oldMouseY) * (mouseSensitivityY)) % 360 + 540) % 360 - 180, 85));
-                gameObject.setYRotation(clamp(-360, ((gameObject.getYRotation() + (mouseX - oldMouseX) * (mouseSensitivityX)) % 360 + 540) % 360 - 180, 360));
-            } else if (mouseEvent.isSecondaryButtonDown()) {
-                // Right click
-            } else if (mouseEvent.isMiddleButtonDown()) {
-                // Middle mouse
+                gameObject.setXRotation(clamp(-85, (gameObject.getXRotation() - (mouseY - oldMouseY) * (mouseSensitivityY)), 85));
+                gameObject.setYRotation(((gameObject.getYRotation() + (mouseX - oldMouseX) * (mouseSensitivityX))));
             }
         }
         return false;
     }
 
     private void moveForward(double deltaTime) {
-        Point3D n = getViewDirection();
-        System.out.println("Forward direction is " + n);
+        Point3D n = getLookDirectionWS();
         gameObject.setTranslation(gameObject.getTranslationX() + (movementSpeed * deltaTime * n.getX()),
                 gameObject.getTranslationY() + (movementSpeed * deltaTime * n.getY()),
                 gameObject.getTranslationZ() + (movementSpeed * deltaTime * n.getZ())
@@ -129,12 +121,7 @@ public class CameraComponent extends Component {
 
     private void strafeLeft(double deltaTime) {
         // -y is the up direction
-        Point3D n = getViewDirection();
-        System.out.println("Forward direction is " + n);
-        Point3D upDir = getUpDirection();
-        System.out.println("Up direction is " + upDir);
-        Point3D rightDir = n.crossProduct(upDir);
-        System.out.println("Left direction is therefore -" + rightDir);
+        Point3D rightDir = getRightDirectionWS();
         gameObject.setTranslation(gameObject.getTranslationX() + (movementSpeed * deltaTime * -rightDir.getX()),
                 gameObject.getTranslationY() + (movementSpeed * deltaTime * -rightDir.getX()),
                 gameObject.getTranslationZ() + (movementSpeed * deltaTime * -rightDir.getX())
@@ -143,12 +130,7 @@ public class CameraComponent extends Component {
 
     private void strafeRight(double deltaTime) {
         // -y is the up direction
-        Point3D n = getViewDirection();
-        System.out.println("Forward direction is " + n);
-        Point3D upDir = getUpDirection();
-        System.out.println("Up direction is " + upDir);
-        Point3D rightDir = n.crossProduct(upDir);
-        System.out.println("Right direction is therefore " + rightDir);
+        Point3D rightDir = getRightDirectionWS();
         gameObject.setTranslation(gameObject.getTranslationX() + (movementSpeed * deltaTime * rightDir.getX()),
                 gameObject.getTranslationY() + (movementSpeed * deltaTime * rightDir.getX()),
                 gameObject.getTranslationZ() + (movementSpeed * deltaTime * rightDir.getX())
@@ -156,37 +138,23 @@ public class CameraComponent extends Component {
     }
 
     private void moveBack(double deltaTime) {
-        Point3D n = getViewDirection();
-        System.out.println("Backwards direction is -" + n);
+        Point3D n = getLookDirectionWS();
         gameObject.setTranslation(gameObject.getTranslationX() + (movementSpeed * deltaTime * -n.getX()),
                 gameObject.getTranslationY() + (movementSpeed * deltaTime * -n.getY()),
                 gameObject.getTranslationZ() + (movementSpeed * deltaTime * -n.getZ())
         );
     }
 
-    // Orientation of affine taken from JavaFX website
-    //   | R | Up| F |  | P|
-    // U |mxx|mxy|mxz|  |tx|
-    // V |myx|myy|myz|  |ty|
-    // N |mzx|mzy|mzz|  |tz|
-    private Point3D getViewDirection() {
-        Transform t = camera.getLocalToSceneTransform();
-        return new Point3D(t.getMxz(), t.getMyz(), t.getMzz());
+    public Point3D getLookDirectionWS() {
+        return gameObject.getRotationTransform().transform(Component.FORWARD);
     }
-    private Point3D getUpDirection() {
-        return new Point3D(0.0, -1.0, 0.0);
+
+    public Point3D getUpDirectionWS() {
+        return gameObject.getRotationTransform().transform(Component.UP);
     }
-    private Point3D getVDirection() {
-        Transform t = camera.getLocalToSceneTransform();
-        return new Point3D(t.getMxy(), t.getMyy(), t.getMzy());
-    }
-    private Point3D getRDirection() {
-        Transform t = camera.getLocalToSceneTransform();
-        return new Point3D(t.getMxx(), t.getMxy(), t.getMxz());
-    }
-    private Point3D getUDirection() {
-        Transform t = camera.getLocalToSceneTransform();
-        return new Point3D(t.getMxx(), t.getMyx(), t.getMzx());
+
+    public Point3D getRightDirectionWS() {
+        return gameObject.getRotationTransform().transform(Component.RIGHT);
     }
 
 }

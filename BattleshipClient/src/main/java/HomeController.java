@@ -1,4 +1,5 @@
 import Data.*;
+import javafx.animation.*;
 import javafx.event.ActionEvent;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
@@ -30,6 +31,7 @@ public class HomeController implements CustomController, Initializable {
     public Button joinButton;
     public ImageView subcategoryIndicator;
     public Button cancelFindGameButton;
+    public ImageView loadingIcon;
 
     private MediaPlayer mediaPlayer;
     private AudioClip navigationSFX;
@@ -119,6 +121,11 @@ public class HomeController implements CustomController, Initializable {
     }
 
     @Override
+    public void onRenderUpdate(double deltaTime) {
+
+    }
+
+    @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         GUIClient.viewMap.put("home", new GUIView(null, this));
         Media media = new Media(getClass().getResource("/audio/TitleScreenMusic.mp3").toExternalForm());
@@ -137,6 +144,12 @@ public class HomeController implements CustomController, Initializable {
         navigationSFX.setVolume(GUIClient.volumeSFX);
 
         focusCurrentButton();
+
+        RotateTransition rt = new RotateTransition(Duration.millis(1000), loadingIcon);
+        rt.setInterpolator(Interpolator.LINEAR);
+        rt.setByAngle(360);
+        rt.setCycleCount(Animation.INDEFINITE);
+        rt.play();
     }
 
     public void buttonPressed() {
@@ -178,11 +191,12 @@ public class HomeController implements CustomController, Initializable {
         GUIClient.clientConnection.send(new Packet(m));
         findGameButton.setVisible(false);
         cancelFindGameButton.setVisible(true);
+        loadingIcon.setVisible(true);
         focusCurrentButton();
     }
 
     public void customGameButtonPressed(ActionEvent actionEvent) {
-        setHasSelectedCustomGame(true);
+        setHasSelectedCustomGame(!hasSelectedCustomGame);
         buttonPressed();
     }
 
@@ -338,6 +352,7 @@ public class HomeController implements CustomController, Initializable {
 
         findGameButton.setVisible(true);
         cancelFindGameButton.setVisible(false);
+        loadingIcon.setVisible(false);
         focusCurrentButton();
     }
 }
