@@ -523,10 +523,9 @@ public class GameController implements CustomController, Initializable {
         //g1.addComponent(new FPCameraComponent());
         OrbitalCameraComponent occ = new OrbitalCameraComponent();
         cameraComp.addComponent(occ);
-        cameraComp.setTranslation(0.0, -5.0, -5.0);
-        occ.camera.setTranslateZ(-0.8);
-        cameraComp.setTranslation(new Point3D(2.5, -1.89, 0.0));
-        cameraComp.setXRotation(-36.0);
+        cameraComp.setTranslation(0.6, -0.75, 0.0);
+        occ.camera.setTranslateZ(-3.4);
+        cameraComp.setXRotation(-35.0);
         cameraComp.setYRotation(-90.0);
         cameraComp.setZRotation(0.0);
 
