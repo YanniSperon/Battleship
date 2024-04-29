@@ -27,22 +27,56 @@ public class GUIServer extends Application {
     HashMap<String, Scene> sceneMap;
     public static Server serverConnection;
 
-    ListView<String> logListView, usersListView, groupsListView, chatListView;
+    ListView<String> logListView, usersListView;
+    //ListView<String> groupsListView, chatListView;
 
-    Label activeChatLabel;
+//    Label activeChatLabel;
     UUID activeChat;
-    UUID activeChat2;
+//    UUID activeChat2;
 
     public static void main(String[] args) {
         launch(args);
     }
 
-    private void updateChat() {
-        synchronized (serverConnection.dataManager) {
-            chatListView.getItems().clear();
-//            if (serverConnection.dataManager.isValidGroup(activeChat)) {
-//                activeChatLabel.setText("Group \"" + serverConnection.dataManager.groups.get(activeChat).name + "\" chat");
-//                for (Data.Message m : serverConnection.dataManager.getGroupChat(activeChat).messages) {
+//    private void updateChat() {
+//        synchronized (serverConnection.dataManager) {
+//            chatListView.getItems().clear();
+////            if (serverConnection.dataManager.isValidGroup(activeChat)) {
+////                activeChatLabel.setText("Group \"" + serverConnection.dataManager.groups.get(activeChat).name + "\" chat");
+////                for (Data.Message m : serverConnection.dataManager.getGroupChat(activeChat).messages) {
+////                    String senderName = serverConnection.dataManager.users.get(m.sender).username;
+////                    if (senderName == null || senderName.equals("Server")) {
+////                        chatListView.getItems().add(m.content);
+////                    } else {
+////                        chatListView.getItems().add(senderName + ": " + m.content);
+////                    }
+////                }
+////            } else
+//            if (serverConnection.dataManager.isValidUser(activeChat)) {
+//                if (serverConnection.dataManager.isValidUser(activeChat2)) {
+//                    activeChatLabel.setText("Game between \"" + serverConnection.dataManager.users.get(activeChat).username + "\" and \"" + serverConnection.dataManager.users.get(activeChat2).username + "\"");
+//                    for (Data.Message m : serverConnection.dataManager.getDM(activeChat, activeChat2).messages) {
+//                        String senderName = serverConnection.dataManager.users.get(m.sender).username;
+//                        if (senderName == null || senderName.equals("Server")) {
+//                            chatListView.getItems().add(m.content);
+//                        } else {
+//                            chatListView.getItems().add(senderName + ": " + m.content);
+//                        }
+//                    }
+//                } else {
+//                    activeChatLabel.setText("Global status (select another user to view game)");
+//                    for (Data.Message m : serverConnection.dataManager.getGroupChat(serverConnection.globalChat.uuid).messages) {
+//                        String senderName = serverConnection.dataManager.users.get(m.sender).username;
+//                        if (senderName == null || senderName.equals("Server")) {
+//                            chatListView.getItems().add(m.content);
+//                        } else {
+//                            chatListView.getItems().add(senderName + ": " + m.content);
+//                        }
+//                    }
+//                }
+//            } else {
+//                activeChatLabel.setText("Global status (select two users to view game)");
+//                for (Data.Message m : serverConnection.dataManager.getGroupChat(serverConnection.globalChat.uuid).messages) {
 //                    String senderName = serverConnection.dataManager.users.get(m.sender).username;
 //                    if (senderName == null || senderName.equals("Server")) {
 //                        chatListView.getItems().add(m.content);
@@ -50,52 +84,19 @@ public class GUIServer extends Application {
 //                        chatListView.getItems().add(senderName + ": " + m.content);
 //                    }
 //                }
-//            } else
-            if (serverConnection.dataManager.isValidUser(activeChat)) {
-                if (serverConnection.dataManager.isValidUser(activeChat2)) {
-                    activeChatLabel.setText("Game between \"" + serverConnection.dataManager.users.get(activeChat).username + "\" and \"" + serverConnection.dataManager.users.get(activeChat2).username + "\"");
-                    for (Data.Message m : serverConnection.dataManager.getDM(activeChat, activeChat2).messages) {
-                        String senderName = serverConnection.dataManager.users.get(m.sender).username;
-                        if (senderName == null || senderName.equals("Server")) {
-                            chatListView.getItems().add(m.content);
-                        } else {
-                            chatListView.getItems().add(senderName + ": " + m.content);
-                        }
-                    }
-                } else {
-                    activeChatLabel.setText("Global status (select another user to view game)");
-                    for (Data.Message m : serverConnection.dataManager.getGroupChat(serverConnection.globalChat.uuid).messages) {
-                        String senderName = serverConnection.dataManager.users.get(m.sender).username;
-                        if (senderName == null || senderName.equals("Server")) {
-                            chatListView.getItems().add(m.content);
-                        } else {
-                            chatListView.getItems().add(senderName + ": " + m.content);
-                        }
-                    }
-                }
-            } else {
-                activeChatLabel.setText("Global status (select two users to view game)");
-                for (Data.Message m : serverConnection.dataManager.getGroupChat(serverConnection.globalChat.uuid).messages) {
-                    String senderName = serverConnection.dataManager.users.get(m.sender).username;
-                    if (senderName == null || senderName.equals("Server")) {
-                        chatListView.getItems().add(m.content);
-                    } else {
-                        chatListView.getItems().add(senderName + ": " + m.content);
-                    }
-                }
-            }
-            if (chatListView.getItems().isEmpty()) {
-                chatListView.getItems().add("");
-            }
-        }
-    }
+//            }
+//            if (chatListView.getItems().isEmpty()) {
+//                chatListView.getItems().add("");
+//            }
+//        }
+//    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         logListView = new ListView<String>();
         usersListView = new ListView<String>();
-        groupsListView = new ListView<String>();
-        chatListView = new ListView<String>();
+        //groupsListView = new ListView<String>();
+        //chatListView = new ListView<String>();
 
         sceneMap = new HashMap<String, Scene>();
 
@@ -129,12 +130,12 @@ public class GUIServer extends Application {
                     if (!anyAdded) {
                         usersListView.getItems().add("");
                     }
-                    groupsListView.getItems().clear();
-                    for (Map.Entry<UUID, Group> pair : serverConnection.dataManager.groups.entrySet()) {
-                        groupsListView.getItems().add(pair.getValue().toDisplayString());
-                    }
+//                    groupsListView.getItems().clear();
+//                    for (Map.Entry<UUID, Group> pair : serverConnection.dataManager.groups.entrySet()) {
+//                        groupsListView.getItems().add(pair.getValue().toDisplayString());
+//                    }
                 }
-                updateChat();
+//                updateChat();
             });
         });
 
@@ -152,46 +153,46 @@ public class GUIServer extends Application {
         centerLLabel.setAlignment(Pos.CENTER);
         VBox leftVBox = new VBox(10, centerLLabel, logListView);
         leftVBox.setAlignment(Pos.CENTER);
-        pane.setLeft(leftVBox);
-
-        activeChatLabel = new Label("Group status (select two users to view game)");
-        activeChatLabel.setAlignment(Pos.CENTER);
-        activeChatLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
-        VBox centerVBox = new VBox(10, activeChatLabel, chatListView);
-        centerVBox.setAlignment(Pos.CENTER);
-        pane.setCenter(centerVBox);
-
-        Label rightLabel = new Label("Users (Select two to view game)");
+        pane.setCenter(leftVBox);
+//
+//        activeChatLabel = new Label("Group status (select two users to view game)");
+//        activeChatLabel.setAlignment(Pos.CENTER);
+//        activeChatLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
+//        VBox centerVBox = new VBox(10, activeChatLabel, chatListView);
+//        centerVBox.setAlignment(Pos.CENTER);
+//        pane.setCenter(centerVBox);
+//
+        Label rightLabel = new Label("Users");
         rightLabel.setFont(Font.font("serif", FontWeight.BOLD, 16));
         rightLabel.setAlignment(Pos.CENTER);
         VBox rightVbox = new VBox(10, rightLabel, usersListView);
-        usersListView.setOnMouseClicked((e) -> {
-            String selectedItem = usersListView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && !selectedItem.isEmpty()) {
-                if (activeChat != null && activeChat2 != null) {
-                    synchronized (serverConnection.dataManager) {
-                        activeChat = serverConnection.dataManager.getByUsername(selectedItem);
-                    }
-                    activeChat2 = null;
-                } else if (activeChat != null) {
-                    synchronized (serverConnection.dataManager) {
-                        if (serverConnection.dataManager.isValidUser(activeChat)) {
-                            activeChat2 = serverConnection.dataManager.getByUsername(selectedItem);
-                            if (activeChat.equals(activeChat2)) {
-                                activeChat2 = null;
-                            }
-                        } else {
-                            activeChat = serverConnection.dataManager.getByUsername(selectedItem);
-                        }
-                    }
-                } else {
-                    synchronized (serverConnection.dataManager) {
-                        activeChat = serverConnection.dataManager.getByUsername(selectedItem);
-                    }
-                }
-                updateChat();
-            }
-        });
+//        usersListView.setOnMouseClicked((e) -> {
+//            String selectedItem = usersListView.getSelectionModel().getSelectedItem();
+//            if (selectedItem != null && !selectedItem.isEmpty()) {
+//                if (activeChat != null && activeChat2 != null) {
+//                    synchronized (serverConnection.dataManager) {
+//                        activeChat = serverConnection.dataManager.getByUsername(selectedItem);
+//                    }
+//                    activeChat2 = null;
+//                } else if (activeChat != null) {
+//                    synchronized (serverConnection.dataManager) {
+//                        if (serverConnection.dataManager.isValidUser(activeChat)) {
+//                            activeChat2 = serverConnection.dataManager.getByUsername(selectedItem);
+//                            if (activeChat.equals(activeChat2)) {
+//                                activeChat2 = null;
+//                            }
+//                        } else {
+//                            activeChat = serverConnection.dataManager.getByUsername(selectedItem);
+//                        }
+//                    }
+//                } else {
+//                    synchronized (serverConnection.dataManager) {
+//                        activeChat = serverConnection.dataManager.getByUsername(selectedItem);
+//                    }
+//                }
+//                updateChat();
+//            }
+//        });
         rightVbox.setAlignment(Pos.CENTER);
         pane.setRight(rightVbox);
 

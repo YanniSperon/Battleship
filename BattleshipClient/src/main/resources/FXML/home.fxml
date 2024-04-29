@@ -4,29 +4,30 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane fx:id="root" prefHeight="495.0" prefWidth="869.0" styleClass="background4" stylesheets="@../styles/home.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HomeController">
-    <ImageView fitHeight="214.0" fitWidth="599.0" layoutX="17.0" layoutY="14.0" preserveRatio="true" styleClass="titleIndicator" AnchorPane.leftAnchor="17.0" AnchorPane.topAnchor="14.0">
+<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background1" stylesheets="@../styles/home.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="HomeController">
+    <ImageView fitHeight="150.0" fitWidth="712.0" layoutX="17.0" layoutY="14.0" preserveRatio="true" styleClass="titleIndicator" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0">
         <image>
             <Image url="@../images/Title.png" />
         </image>
     </ImageView>
-    <Button fx:id="findGameButton" focusTraversable="false" layoutX="46.0" layoutY="196.0" mnemonicParsing="false" onAction="#findGameButtonPressed" onMouseEntered="#onMouseEnteredFindGame" prefHeight="50.0" prefWidth="200.0" styleClass="findGameButton" AnchorPane.leftAnchor="46.0" AnchorPane.topAnchor="196.0" />
-   <ImageView fx:id="loadingIcon" fitHeight="40.0" fitWidth="40.0" layoutX="205.0" layoutY="201.0" preserveRatio="true" styleClass="titleIndicator" visible="false" AnchorPane.leftAnchor="205.0" AnchorPane.topAnchor="201.0">
+    <Button fx:id="findGameButton" focusTraversable="false" layoutX="46.0" layoutY="196.0" mnemonicParsing="false" onAction="#findGameButtonPressed" onMouseEntered="#onMouseEnteredFindGame" prefHeight="50.0" prefWidth="200.0" styleClass="findGameButton" AnchorPane.bottomAnchor="250.0" AnchorPane.leftAnchor="40.0" />
+   <ImageView fx:id="loadingIcon" fitHeight="40.0" fitWidth="40.0" layoutX="205.0" layoutY="201.0" preserveRatio="true" styleClass="titleIndicator" visible="false" AnchorPane.bottomAnchor="255.0" AnchorPane.leftAnchor="200.0">
       <image>
          <Image url="@../images/LoadIcon.png" />
       </image>
    </ImageView>
-    <Button fx:id="cancelFindGameButton" focusTraversable="false" layoutX="46.0" layoutY="196.0" mnemonicParsing="false" onAction="#cancelFindGameButtonPressed" onMouseEntered="#onMouseEnteredFindGame" prefHeight="50.0" prefWidth="145.0" styleClass="cancelButton" visible="false" AnchorPane.leftAnchor="46.0" AnchorPane.topAnchor="196.0" />
-    <Button fx:id="customGameButton" focusTraversable="false" layoutX="46.0" layoutY="273.0" onAction="#customGameButtonPressed" onMouseEntered="#onMouseEnteredCustomGame" prefHeight="50.0" prefWidth="270.0" styleClass="customGameButton" AnchorPane.leftAnchor="46.0" AnchorPane.topAnchor="273.0">
+    <Button fx:id="cancelFindGameButton" focusTraversable="false" layoutX="46.0" layoutY="196.0" mnemonicParsing="false" onAction="#cancelFindGameButtonPressed" onMouseEntered="#onMouseEnteredFindGame" prefHeight="50.0" prefWidth="145.0" styleClass="cancelButton" visible="false" AnchorPane.bottomAnchor="250.0" AnchorPane.leftAnchor="40.0" />
+    <Button fx:id="customGameButton" disable="true" focusTraversable="false" layoutX="46.0" layoutY="273.0" onAction="#customGameButtonPressed" onMouseEntered="#onMouseEnteredCustomGame" prefHeight="50.0" prefWidth="270.0" styleClass="customGameButton" visible="false" AnchorPane.bottomAnchor="175.0" AnchorPane.leftAnchor="40.0">
     </Button>
-   <Button fx:id="startButton" focusTraversable="false" layoutX="399.0" layoutY="237.0" onAction="#startButtonPressed" onMouseEntered="#onMouseEnteredStartButton" prefHeight="50.0" prefWidth="121.0" styleClass="startButton" visible="false" AnchorPane.leftAnchor="399.0" AnchorPane.topAnchor="237.0" />
-    <Button fx:id="settingsButton" focusTraversable="false" layoutX="46.0" layoutY="346.0" mnemonicParsing="false" onAction="#settingsButtonPressed" onMouseEntered="#onMouseEnteredSettings" prefHeight="50.0" prefWidth="179.0" styleClass="settingsButton" AnchorPane.leftAnchor="46.0" AnchorPane.topAnchor="346.0" />
-    <Button fx:id="levelIndicator" focusTraversable="false" layoutX="648.0" layoutY="397.0" mnemonicParsing="false" prefHeight="75.0" prefWidth="200.0" styleClass="level1Indicator" AnchorPane.bottomAnchor="22.799999999999997" AnchorPane.rightAnchor="21.0" />
-    <ProgressBar fx:id="levelProgressBar" layoutX="648.0" layoutY="463.0" prefHeight="18.0" prefWidth="200.0" progress="0.05" style="-fx-accent-color: #045ed7;" AnchorPane.bottomAnchor="13.600000000000023" AnchorPane.rightAnchor="21.0" />
-   <ImageView fx:id="subcategoryIndicator" fitHeight="156.0" fitWidth="50.0" layoutX="332.0" layoutY="237.0" preserveRatio="true" styleClass="subcategoryIndicator" visible="false" AnchorPane.leftAnchor="332.0" AnchorPane.topAnchor="237.0">
+   <Button fx:id="startButton" focusTraversable="false" layoutX="399.0" layoutY="237.0" onAction="#startButtonPressed" onMouseEntered="#onMouseEnteredStartButton" prefHeight="50.0" prefWidth="121.0" styleClass="startButton" visible="false" AnchorPane.bottomAnchor="215.0" AnchorPane.leftAnchor="400.0" />
+    <Button fx:id="settingsButton" focusTraversable="false" layoutX="46.0" layoutY="346.0" mnemonicParsing="false" onAction="#settingsButtonPressed" onMouseEntered="#onMouseEnteredSettings" prefHeight="50.0" prefWidth="179.0" styleClass="settingsButton" AnchorPane.bottomAnchor="100.0" AnchorPane.leftAnchor="40.0" />
+    <Button fx:id="levelIndicator" focusTraversable="false" layoutX="648.0" layoutY="397.0" mnemonicParsing="false" prefHeight="75.0" prefWidth="200.0" styleClass="level1Indicator" AnchorPane.bottomAnchor="27.5" AnchorPane.rightAnchor="20.0" />
+    <ProgressBar fx:id="levelProgressBar" layoutX="648.0" layoutY="463.0" prefHeight="18.0" prefWidth="200.0" progress="0.05" style="-fx-accent-color: #045ed7;" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+   <ImageView fx:id="subcategoryIndicator" fitHeight="150.0" fitWidth="50.0" layoutX="332.0" layoutY="237.0" preserveRatio="true" styleClass="subcategoryIndicator" visible="false" AnchorPane.bottomAnchor="140.0" AnchorPane.leftAnchor="330.0">
       <image>
          <Image url="@../images/Subcategory.png" />
       </image>
    </ImageView>
-   <Button fx:id="joinButton" focusTraversable="false" layoutX="399.0" layoutY="307.0" onAction="#joinButtonPressed" onMouseEntered="#onMouseEnteredJoinButton" prefHeight="50.0" prefWidth="89.0" styleClass="joinButton" visible="false" AnchorPane.leftAnchor="399.0" AnchorPane.topAnchor="307.0" />
+   <Button fx:id="joinButton" focusTraversable="false" layoutX="399.0" layoutY="307.0" onAction="#joinButtonPressed" onMouseEntered="#onMouseEnteredJoinButton" prefHeight="50.0" prefWidth="89.0" styleClass="joinButton" visible="false" AnchorPane.bottomAnchor="140.0" AnchorPane.leftAnchor="400.0" />
+   <Button fx:id="playAIButton" focusTraversable="false" layoutX="50.0" layoutY="360.0" mnemonicParsing="false" onAction="#playAIButtonPressed" onMouseEntered="#onMouseEnteredPlayAI" prefHeight="50.0" prefWidth="142.0" styleClass="playAIButton" AnchorPane.bottomAnchor="175.0" AnchorPane.leftAnchor="40.0" />
 </AnchorPane>

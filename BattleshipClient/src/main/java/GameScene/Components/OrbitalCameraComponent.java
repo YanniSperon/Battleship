@@ -20,7 +20,7 @@ public class OrbitalCameraComponent extends Component {
         camera = new PerspectiveCamera(true);
         camera.setNearClip(0.01);
         camera.setFarClip(100.0);
-        camera.setFieldOfView(90);
+        camera.setFieldOfView(60);
         camera.setVerticalFieldOfView(true);
         gameObject.childrenHolder.getChildren().add(camera);
     }
@@ -41,36 +41,36 @@ public class OrbitalCameraComponent extends Component {
 
     @Override
     public boolean onMouseEvent(MouseEvent mouseEvent) {
-        if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
-            mouseX = mouseEvent.getSceneX();
-            mouseY = mouseEvent.getSceneY();
-        } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
-            double oldMouseX = mouseX;
-            double oldMouseY = mouseY;
-
-            mouseX = mouseEvent.getSceneX();
-            mouseY = mouseEvent.getSceneY();
-
-            if (mouseEvent.isMiddleButtonDown()) {
-                if (!mouseEvent.isShiftDown()) {
-                    // Orbit
-                    gameObject.setXRotation(clamp(-85.0, gameObject.getXRotation() - ((mouseY - oldMouseY) * mouseSensitivityY), 85.0));
-                    gameObject.setYRotation(gameObject.getYRotation() + ((mouseX - oldMouseX) * mouseSensitivityX));
-                } else {
-                    // Pan
-                    gameObject.setTranslation(gameObject.getTranslation().add(getRightDirectionWS().multiply(-(mouseX - oldMouseX) * panSpeed).add(getUpDirectionWS().multiply((mouseY - oldMouseY) * panSpeed))));
-                }
-                return true;
-            }
-        }
+//        if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
+//            mouseX = mouseEvent.getSceneX();
+//            mouseY = mouseEvent.getSceneY();
+//        } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
+//            double oldMouseX = mouseX;
+//            double oldMouseY = mouseY;
+//
+//            mouseX = mouseEvent.getSceneX();
+//            mouseY = mouseEvent.getSceneY();
+//
+//            if (mouseEvent.isMiddleButtonDown()) {
+//                if (!mouseEvent.isShiftDown()) {
+//                    // Orbit
+//                    gameObject.setXRotation(clamp(-85.0, gameObject.getXRotation() - ((mouseY - oldMouseY) * mouseSensitivityY), 85.0));
+//                    gameObject.setYRotation(gameObject.getYRotation() + ((mouseX - oldMouseX) * mouseSensitivityX));
+//                } else {
+//                    // Pan
+//                    gameObject.setTranslation(gameObject.getTranslation().add(getRightDirectionWS().multiply(-(mouseX - oldMouseX) * panSpeed).add(getUpDirectionWS().multiply((mouseY - oldMouseY) * panSpeed))));
+//                }
+//                return true;
+//            }
+//        }
         return false;
     }
 
     @Override
     public boolean onScrollEvent(ScrollEvent scrollEvent) {
-        if (scrollEvent.getEventType() == ScrollEvent.SCROLL) {
-            camera.setTranslateZ(clamp(-maxDistFromCenter, camera.getTranslateZ() + (scrollEvent.getDeltaY() * scrollSpeed), -minDistToCenter));
-        }
+//        if (scrollEvent.getEventType() == ScrollEvent.SCROLL) {
+//            camera.setTranslateZ(clamp(-maxDistFromCenter, camera.getTranslateZ() + (scrollEvent.getDeltaY() * scrollSpeed), -minDistToCenter));
+//        }
         return false;
     }
 

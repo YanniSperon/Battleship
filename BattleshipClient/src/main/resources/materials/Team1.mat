@@ -1,0 +1,9 @@
+// File paths are expects to be in resources/materials/textures/
+
+bumpMap: Default
+diffuseColor: Default
+diffuseMap: Team1.jpg
+selfIlluminationMap: Default
+specularColor: Default
+specularMap: Default
+specularPower: Default

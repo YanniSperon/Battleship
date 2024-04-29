@@ -1,6 +1,7 @@
 package GameScene;
 
 import GameScene.Components.Component;
+import GameScene.Components.MovableComponent;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.input.KeyEvent;
@@ -160,5 +161,14 @@ public class GameObject {
 
     public Point3D getTranslation() {
         return new Point3D(translate.getX(), translate.getY(), translate.getZ());
+    }
+
+    public boolean getIsSelected() {
+        Component c = getComponentOfType(Component.ComponentType.MOVABLE);
+        if (c != null) {
+            MovableComponent mc = (MovableComponent) c;
+            return mc.isSelected;
+        }
+        return false;
     }
 }

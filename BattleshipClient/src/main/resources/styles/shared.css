@@ -4,58 +4,71 @@
 }
 
 .background{
-	-fx-background-image: url("../images/BackgroundPhoto1.jpg");
+	-fx-background-image: url("../images/BackgroundPhoto2.jpg");
     -fx-background-repeat: no-repeat;
-    -fx-background-size: 2513 1545;
+    -fx-background-size: cover;
     -fx-background-position: center center;
 }
 
 .background1{
  	-fx-background-image: url("../images/BackgroundPhoto1.jpg");
     -fx-background-repeat: no-repeat;
-    -fx-background-size: 2513 1545;
+    -fx-background-size: cover;
     -fx-background-position: center center;
  }
 
 .background2{
  	-fx-background-image: url("../images/BackgroundPhoto2.jpg");
     -fx-background-repeat: no-repeat;
-    -fx-background-size: 2513 1545;
+    -fx-background-size: cover;
     -fx-background-position: center center;
  }
 
 .background3{
  	-fx-background-image: url("../images/BackgroundPhoto3.jpg");
     -fx-background-repeat: no-repeat;
-    -fx-background-size: 2513 1545;
+    -fx-background-size: cover;
     -fx-background-position: center center;
  }
 
 .background4{
  	-fx-background-image: url("../images/BackgroundPhoto4.jpg");
     -fx-background-repeat: no-repeat;
-    -fx-background-size: 2513 1545;
+    -fx-background-size: cover;
     -fx-background-position: center center;
  }
 
 .basicFont{
 	-fx-font-family: 'Agency FB';
     -fx-font-size: 20px;
-    -fx-text-stretch: white;
+}
+
+.settingsFont{
+	-fx-font-family: 'Agency FB';
+	-fx-font-weight: bold;
+    -fx-font-size: 40px;
+}
+
+.settingsFont .text {
+    -fx-fill: white;
+    -fx-stroke: black;
+    -fx-stroke-width: 1px;
+}
+
+.settingsSlider .track{
+    -fx-background-color: rgba(255, 255, 255, 0.2);
 }
 
 .basicSmallFont{
 	-fx-font-family: 'Agency FB';
-    -fx-text-stretch: white;
     -fx-font-size: 12px;
 }
 
 .errorMessage{
 	-fx-font-family: 'Agency FB';
     -fx-font-size: 20px;
-    -fx-text-stretch: white;
     -fx-font-weight: bold;
-    -fx-text-stretch: red;
+    -fx-fill: red;
 }
 
 .indicatorMessage{
@@ -110,6 +123,54 @@
  	-fx-background-image: url("../images/FindGameHighlighted.png");
     -fx-background-repeat: no-repeat;
     -fx-background-size: 200 50;
+    -fx-background-position: center center;
+}
+
+.playAIButton{
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+
+ 	-fx-background-image: url("../images/PlayAI.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 142 50;
+    -fx-background-position: center center;
+}
+
+.playAIButton:focused {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+
+ 	-fx-background-image: url("../images/PlayAIHighlighted.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 142 50;
+    -fx-background-position: center center;
+}
+
+.backButton{
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+
+ 	-fx-background-image: url("../images/Back.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 103 50;
+    -fx-background-position: center center;
+}
+
+.backButton:focused {
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-radius: 0;
+    -fx-background-color: transparent;
+
+ 	-fx-background-image: url("../images/BackHighlighted.png");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: 103 50;
     -fx-background-position: center center;
 }
 

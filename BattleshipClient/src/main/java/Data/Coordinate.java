@@ -26,4 +26,21 @@ public class Coordinate implements Serializable {
         return Integer.compare(X, c.X) == 0
                 && Integer.compare(Y, c.Y) == 0;
     }
+
+    public Coordinate add(Coordinate otherCoord) {
+        return new Coordinate(X + otherCoord.X, Y + otherCoord.Y);
+    }
+
+    public Coordinate add(int x, int y) {
+        return new Coordinate(X + x, Y + y);
+    }
+
+    public Coordinate multiply(int val) {
+        return new Coordinate(X * val, Y * val);
+    }
+
+    @Override
+    public String toString() {
+        return "Coordinate(X: \"" + X + "\" Y: \"" + Y + "\")";
+    }
 }

@@ -92,6 +92,6 @@ public class AnimatedMesh3D extends Mesh3D {
     }
 
     public double getLargestAnimationPosition() {
-        return ((double) frames.size());
+        return ((double) frames.size() - 1);
     }
 }

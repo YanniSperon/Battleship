@@ -9,22 +9,35 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MeshManager {
-    public static HashMap<String, Mesh3D> regularModelCache = new HashMap<String, Mesh3D>();
+    private static final HashMap<String, LoadResult> regularModelCache = new HashMap<String, LoadResult>();
 
-    public static HashMap<String, AnimatedMesh3D> animatedModelCache = new HashMap<String, AnimatedMesh3D>();
+    private static final HashMap<String, LoadResult> animatedModelCache = new HashMap<String, LoadResult>();
 
     // Expects fileName to be the name of a file in the meshes directory in the resources folder
     public static Mesh3D load(String fileName) {
         return load(fileName, true);
     }
 
+    private static class LoadResult {
+        PrimitiveFloatArrayList vertices;
+        PrimitiveFloatArrayList normals;
+        PrimitiveFloatArrayList textureCoords;
+        PrimitiveIntArrayList faces;
+        Mesh3D mesh;
+    }
+
     // Expects fileName to be the name of a file in the meshes directory in the resources directory
     private static Mesh3D load(String fileName, boolean shouldCache) {
+        return loadImpl(fileName, shouldCache).mesh;
+    }
+
+    private static LoadResult loadImpl(String fileName, boolean shouldCache) {
         if (shouldCache && regularModelCache.containsKey(fileName)) {
             return regularModelCache.get(fileName);
         }
 
         BufferedReader reader;
+        LoadResult output = new LoadResult();
         TriangleMesh mesh = new TriangleMesh();
         mesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
         try {
@@ -129,9 +142,13 @@ public class MeshManager {
             faces.trim();
 
             mesh.getPoints().setAll(vertices.data);
+            output.vertices = vertices;
             mesh.getNormals().setAll(normals.data);
+            output.normals = normals;
             mesh.getTexCoords().setAll(textureCoords.data);
+            output.textureCoords = textureCoords;
             mesh.getFaces().setAll(faces.data);
+            output.faces = faces;
 
             System.out.println("    Number of vertices: " + mesh.getPoints().size());
             System.out.println("    Number of triangles: " + mesh.getFaces().size());
@@ -139,18 +156,22 @@ public class MeshManager {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Mesh3D outputMesh = new Mesh3D(mesh);
+        output.mesh = new Mesh3D(mesh);
         if (shouldCache) {
-            regularModelCache.put(fileName, outputMesh);
+            regularModelCache.put(fileName, output);
         }
-        return outputMesh;
+        return output;
+    }
+
+    public static AnimatedMesh3D loadAnimated(ArrayList<String> fileNames) {
+        return (AnimatedMesh3D) loadAnimatedImpl(fileNames).mesh;
     }
 
     // Expects fileNames ArrayList to be at least size of 2
     // Expects the strings in fileNames to be the name of a file in the meshes directory in the resources directory
     // Meshes are expected to have the same faces, texture coordinates, and normals, only different vertex positions
     // This likely means animated meshes cannot be properly lit as the normals will be incorrect during animation
-    public static AnimatedMesh3D loadAnimated(ArrayList<String> fileNames) {
+    private static LoadResult loadAnimatedImpl(ArrayList<String> fileNames) {
         StringBuilder cacheNameSB = new StringBuilder();
         for (String fileName : fileNames) {
             cacheNameSB.append(fileName);
@@ -162,12 +183,16 @@ public class MeshManager {
         }
 
         BufferedReader reader;
+        LoadResult output = new LoadResult();
         AnimatedMesh3D mesh = new AnimatedMesh3D();
         boolean isFirst = true;
         for (String fileName : fileNames) {
             try {
                 if (isFirst) {
-                    mesh.setInitialMesh(load(fileName, false).mesh);
+                    LoadResult initialLoadedMesh = loadImpl(fileName, false);
+                    mesh.setInitialMesh(initialLoadedMesh.mesh.mesh);
+                    mesh.addFrame(initialLoadedMesh.vertices);
+                    output = initialLoadedMesh;
                     isFirst = false;
                 } else {
                     reader = new BufferedReader(new InputStreamReader(MeshManager.class.getResourceAsStream("/meshes/" + fileName)));
@@ -197,7 +222,8 @@ public class MeshManager {
                 e.printStackTrace();
             }
         }
-        animatedModelCache.put(cacheName, mesh);
-        return mesh;
+        output.mesh = mesh;
+        animatedModelCache.put(cacheName, output);
+        return output;
     }
 }

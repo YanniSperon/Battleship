@@ -32,8 +32,9 @@ public class HomeController implements CustomController, Initializable {
     public ImageView subcategoryIndicator;
     public Button cancelFindGameButton;
     public ImageView loadingIcon;
+    public Button playAIButton;
 
-    private MediaPlayer mediaPlayer;
+    public MediaPlayer mediaPlayer;
     private AudioClip navigationSFX;
 
     public void sendButtonPressed(ActionEvent actionEvent) {
@@ -66,11 +67,15 @@ public class HomeController implements CustomController, Initializable {
     }
 
     private long getCurrentLevel(User u) {
-        return (u.xp / 100) + 1;
+        return Math.min((u.xp / 100) + 1, 10);
     }
 
     private double getDecimalToNextLevelRepresentation(User u) {
-        return Math.max((((double) (u.xp % 100)) * 0.01), 0.05);
+        if (getCurrentLevel(u) == 10) {
+            return 1.0;
+        } else {
+            return Math.max((((double) (u.xp % 100)) * 0.01), 0.05);
+        }
     }
 
     private void refreshGUI() {
@@ -95,6 +100,21 @@ public class HomeController implements CustomController, Initializable {
         }
     }
 
+    private void onGameFound() {
+        mediaPlayer.pause();
+        GameController gc = (GameController) GUIClient.viewMap.get("game").controller;
+        gc.mediaPlayer.play();
+        GUIClient.primaryStage.setScene(GUIClient.viewMap.get("game").scene);
+
+        synchronized (GUIClient.clientConnection.isSearchingForGame) {
+            GUIClient.clientConnection.isSearchingForGame = true;
+        }
+
+        findGameButton.setVisible(true);
+        cancelFindGameButton.setVisible(false);
+        loadingIcon.setVisible(false);
+    }
+
     @Override
     public void updateUI(GUICommand command) {
         switch (command.type) {
@@ -104,6 +124,9 @@ public class HomeController implements CustomController, Initializable {
             case REFRESH:
             case GROUP_CREATE_SUCCESS:
                 refreshGUI();
+                break;
+            case GAME_FOUND:
+                onGameFound();
                 break;
             default:
                 break;
@@ -122,7 +145,8 @@ public class HomeController implements CustomController, Initializable {
 
     @Override
     public void onRenderUpdate(double deltaTime) {
-
+        navigationSFX.setVolume(GUIClient.volumeMenuSFX);
+        mediaPlayer.setVolume(GUIClient.volumeMusic);
     }
 
     @Override
@@ -141,7 +165,7 @@ public class HomeController implements CustomController, Initializable {
         });
 
         navigationSFX = new AudioClip(getClass().getResource("/audio/MenuNavigationSFX.mp3").toExternalForm());
-        navigationSFX.setVolume(GUIClient.volumeSFX);
+        navigationSFX.setVolume(GUIClient.volumeMenuSFX);
 
         focusCurrentButton();
 
@@ -203,7 +227,7 @@ public class HomeController implements CustomController, Initializable {
     public void settingsButtonPressed(ActionEvent actionEvent) {
         setHasSelectedCustomGame(false);
         buttonPressed();
-        GUIClient.primaryStage.setScene(GUIClient.viewMap.get("game").scene);
+        GUIClient.primaryStage.setScene(GUIClient.viewMap.get("settings").scene);
     }
 
     private boolean hasSelectedCustomGame = false;
@@ -221,16 +245,16 @@ public class HomeController implements CustomController, Initializable {
                 }
                 break;
             case 1:
-                customGameButtonPressed(new ActionEvent());
+                playAIButtonPressed(new ActionEvent());
                 break;
             case 2:
                 settingsButtonPressed(new ActionEvent());
                 break;
             case 3:
-                startButtonPressed(new ActionEvent());
+                //startButtonPressed(new ActionEvent());
                 break;
             case 4:
-                joinButtonPressed(new ActionEvent());
+                //joinButtonPressed(new ActionEvent());
                 break;
             default:
                 break;
@@ -252,7 +276,7 @@ public class HomeController implements CustomController, Initializable {
                 }
                 break;
             case 1:
-                customGameButton.requestFocus();
+                playAIButton.requestFocus();
                 break;
             case 2:
                 settingsButton.requestFocus();
@@ -354,5 +378,26 @@ public class HomeController implements CustomController, Initializable {
         cancelFindGameButton.setVisible(false);
         loadingIcon.setVisible(false);
         focusCurrentButton();
+    }
+
+    public void playAIButtonPressed(ActionEvent actionEvent) {
+        currFocus = 1;
+        setHasSelectedCustomGame(false);
+        buttonPressed();
+        synchronized (GUIClient.clientConnection.isSearchingForGame) {
+            GUIClient.clientConnection.isSearchingForGame = true;
+        }
+        FindGame m = new FindGame();
+        m.shouldFindGame = true;
+        m.vsAI = true;
+        GUIClient.clientConnection.send(new Packet(m));
+        focusCurrentButton();
+    }
+
+    public void onMouseEnteredPlayAI(MouseEvent mouseEvent) {
+        if (!hasSelectedCustomGame) {
+            currFocus = 1;
+            focusCurrentButton();
+        }
     }
 }

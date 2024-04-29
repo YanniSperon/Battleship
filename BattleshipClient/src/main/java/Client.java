@@ -81,8 +81,10 @@ public class Client extends Thread {
     }
 
     private void executeUpdateGame(UUID id, Packet p) {
+        System.out.println("Updating game");
         UpdateGame d = (UpdateGame) p.data;
-        dataManager.setGame(d.user1, d.user2, d.game);
+        System.out.println(d.game);
+        dataManager.setGame(d.game.player1, d.game.player2, d.game);
         UIUpdateCallback.accept(new GUICommand(GUICommand.Type.REFRESH));
     }
 
@@ -121,6 +123,14 @@ public class Client extends Thread {
             }
         } else {
             UIUpdateCallback.accept(new GUICommand(GUICommand.Type.MOVE_FAIL));
+        }
+    }
+
+    private void executeTurnSwitch(UUID id, Packet p) {
+        TurnSwitch d = (TurnSwitch) p.data;
+        Game g = dataManager.getGame(d.p1, d.p2);
+        synchronized (g.turn) {
+            g.turn = d.newTurn;
         }
     }
 
@@ -183,6 +193,10 @@ public class Client extends Thread {
                 }
                 case MOVE_RESULT: {
                     executeMoveResult(id, p);
+                    break;
+                }
+                case TURN_SWITCH: {
+                    executeTurnSwitch(id, p);
                     break;
                 }
                 default:

@@ -310,34 +310,57 @@ public class Server {
         FindGame request = (FindGame) p.data;
         synchronized (gameQueue) {
             if (request.shouldFindGame) {
-                if (gameQueue.contains(id)) {
-                    // Ignore request, player already in queue
+                if (request.vsAI) {
+                    UUID firstID = id;
+                    UUID secondID = serverUser.uuid;
+
+                    Game newGame = dataManager.createGame(firstID, secondID);
+
+                    GameFound replyPayload = new GameFound();
+                    replyPayload.user1 = firstID;
+                    replyPayload.user2 = secondID;
+                    Packet reply = new Packet(replyPayload);
+                    clients.get(firstID).sendPacket(reply);
+                    clients.get(secondID).sendPacket(reply);
+
+                    UpdateGame updateGamePayload = new UpdateGame();
+                    updateGamePayload.user1 = firstID;
+                    updateGamePayload.user2 = secondID;
+                    updateGamePayload.game = newGame;
+                    Packet updateGamePacket = new Packet(updateGamePayload);
+                    updateGameMembers(newGame, updateGamePacket);
+
+                    serverLogCallback.accept(getLogClientDescriptor(firstID) + " looking for game vs AI, starting AI game");
                 } else {
-                    gameQueue.add(id);
-                    if (gameQueue.size() >= 2) {
-                        // At least two players are in queue, take the two at the front
-                        UUID firstID = gameQueue.pollLast();
-                        UUID secondID = gameQueue.pollLast();
-
-                        Game newGame = dataManager.createGame(firstID, secondID);
-
-                        GameFound replyPayload = new GameFound();
-                        replyPayload.user1 = firstID;
-                        replyPayload.user2 = secondID;
-                        Packet reply = new Packet(replyPayload);
-                        clients.get(firstID).sendPacket(reply);
-                        clients.get(secondID).sendPacket(reply);
-
-                        UpdateGame updateGamePayload = new UpdateGame();
-                        updateGamePayload.user1 = firstID;
-                        updateGamePayload.user2 = secondID;
-                        updateGamePayload.game = newGame;
-                        Packet updateGamePacket = new Packet(updateGamePayload);
-                        updateGameMembers(newGame, updateGamePacket);
-
-                        serverLogCallback.accept(getLogClientDescriptor(firstID) + " looking for game, found with " + getLogClientDescriptor(secondID));
+                    if (gameQueue.contains(id)) {
+                        // Ignore request, player already in queue
                     } else {
-                        serverLogCallback.accept(getLogClientDescriptor(id) + " looking for game");
+                        gameQueue.add(id);
+                        if (gameQueue.size() >= 2) {
+                            // At least two players are in queue, take the two at the front
+                            UUID firstID = gameQueue.pollLast();
+                            UUID secondID = gameQueue.pollLast();
+
+                            Game newGame = dataManager.createGame(firstID, secondID);
+
+                            GameFound replyPayload = new GameFound();
+                            replyPayload.user1 = firstID;
+                            replyPayload.user2 = secondID;
+                            Packet reply = new Packet(replyPayload);
+                            clients.get(firstID).sendPacket(reply);
+                            clients.get(secondID).sendPacket(reply);
+
+                            UpdateGame updateGamePayload = new UpdateGame();
+                            updateGamePayload.user1 = firstID;
+                            updateGamePayload.user2 = secondID;
+                            updateGamePayload.game = newGame;
+                            Packet updateGamePacket = new Packet(updateGamePayload);
+                            updateGameMembers(newGame, updateGamePacket);
+
+                            serverLogCallback.accept(getLogClientDescriptor(firstID) + " looking for game, found with " + getLogClientDescriptor(secondID));
+                        } else {
+                            serverLogCallback.accept(getLogClientDescriptor(id) + " looking for game");
+                        }
                     }
                 }
             } else {
@@ -393,106 +416,295 @@ public class Server {
         serverLogCallback.accept(getLogClientDescriptor(id) + " started a private game with code \"" + code + "\"");
     }
 
-    private boolean isValidLocation(ArrayList<Piece> pieces, Coordinate c) {
+    private boolean isSpaceTaken(ArrayList<Piece> pieces, Coordinate c) {
+        if (c == null || c.X < 0 || c.X >= 10 || c.Y < 0 || c.Y >= 10) {
+            return true;
+        }
         for (Piece p : pieces) {
-            for (Coordinate pos : p.positions) {
-                if (c.equals(pos)) {
-                    return false;
+            for (Coordinate otherCoord : p.getPositions()) {
+                if (otherCoord.equals(c)) {
+                    return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
-    private boolean isValidPiece(ArrayList<Piece> otherPieces, Piece p) {
-        if (p.positions.size() != p.size) {
-            return false;
-        }
-        for (Coordinate c : p.positions) {
-            if (!isValidLocation(otherPieces, c)) {
+    private boolean isValidPieceLocation(ArrayList<Piece> otherPieces, Piece p) {
+        for (Coordinate c : p.getPositions()) {
+            System.out.println("Position " + c);
+            if (isSpaceTaken(otherPieces, c) || c.X < 0 || c.X > 9 || c.Y < 0 || c.Y > 9) {
                 return false;
             }
         }
         return true;
     }
 
-    private int countPiecesWithSize(ArrayList<Piece> pieces, int size) {
-        int count = 0;
-        for (Piece p : pieces) {
-            if (p.size == size) {
-                count++;
+    private boolean isValidPieceType(ArrayList<Piece> pieces, Piece p) {
+        if (p.type == Piece.PieceType.NONE) {
+            return false;
+        }
+        System.out.println("Existing pieces: ");
+        for (Piece otherPiece : pieces) {
+            System.out.println("  " + otherPiece);
+            if (otherPiece.type == p.type) {
+                return false;
             }
         }
-        return count;
+        return true;
     }
 
     private boolean canExist(ArrayList<Piece> otherPieces, Piece p) {
-        if (!isValidPiece(otherPieces, p)) {
-            return false;
-        }
-
-        switch (p.size) {
-            case 2:
-                return countPiecesWithSize(otherPieces, 2) == 0;
-            case 3:
-                int numOtherPiecesWithSize = countPiecesWithSize(otherPieces, 2);
-                return numOtherPiecesWithSize == 0 || numOtherPiecesWithSize == 1;
-            case 4:
-                return countPiecesWithSize(otherPieces, 4) == 0;
-            case 5:
-                return countPiecesWithSize(otherPieces, 5) == 0;
-            default:
-                return false;
-        }
+        return isValidPieceType(otherPieces, p) && isValidPieceLocation(otherPieces, p);
     }
 
     private void executePlacePiece(UUID id, Packet p) {
         PlacePiece request = (PlacePiece) p.data;
         Game g = dataManager.getGame(request.opponent, id);
+        System.out.println(request.piece);
+        boolean wasSuccessful = false;
         if (g.player1.equals(id)) {
+            System.out.println("We are player 1");
             // We are player 1
-            if (g.user1Pieces.size() < 5 && canExist(g.user1Pieces, request.piece)) {
-                // Valid
-                g.user1Pieces.add(request.piece);
-                PlacePieceResult res = new PlacePieceResult();
-                res.opponent = request.opponent;
-                res.status = true;
-                clients.get(id).sendPacket(new Packet(res));
-                serverLogCallback.accept(getLogClientDescriptor(id) + " placed a piece in their game with " + getLogClientDescriptor(g.player2));
-                return;
+            if (g.player1Pieces.size() < 5) {
+                System.out.println("Pieces size < 5");
+                if (canExist(g.player1Pieces, request.piece)) {
+                    System.out.println("Can exist");
+                    // Valid
+                    g.player1Pieces.add(request.piece);
+                    PlacePieceResult res = new PlacePieceResult();
+                    res.opponent = request.opponent;
+                    res.status = true;
+                    clients.get(id).sendPacket(new Packet(res));
+                    serverLogCallback.accept(getLogClientDescriptor(id) + " placed a piece in their game with " + getLogClientDescriptor(g.player2));
+
+                    wasSuccessful = true;
+                }
+            }
+            if (g.player1Pieces.size() == 5 && g.player2.equals(serverUser.uuid)) {
+                // Place AI pieces, AI will always be player 2 if it is an AI game
+                generateAIPositions(g);
+                wasSuccessful = true;
             }
         } else if (g.player2.equals(id)) {
+            System.out.println("We are player 2");
             // We are player 2
-            if (g.user2Pieces.size() < 5 && canExist(g.user2Pieces, request.piece)) {
-                // Valid
-                g.user2Pieces.add(request.piece);
-                PlacePieceResult res = new PlacePieceResult();
-                res.opponent = request.opponent;
-                res.status = true;
-                clients.get(id).sendPacket(new Packet(res));
-                serverLogCallback.accept(getLogClientDescriptor(id) + " placed a piece in their game with " + getLogClientDescriptor(g.player1));
-                return;
+            if (g.player2Pieces.size() < 5) {
+                System.out.println("Pieces size < 5");
+                if (canExist(g.player2Pieces, request.piece)) {
+                    System.out.println("Can exist");
+                    // Valid
+                    g.player2Pieces.add(request.piece);
+                    PlacePieceResult res = new PlacePieceResult();
+                    res.opponent = request.opponent;
+                    res.status = true;
+                    clients.get(id).sendPacket(new Packet(res));
+                    serverLogCallback.accept(getLogClientDescriptor(id) + " placed a piece in their game with " + getLogClientDescriptor(g.player1));
+
+                    wasSuccessful = true;
+                }
             }
         }
 
-        // If we did not return above, the placement was invalid, indicate to user
-        PlacePieceResult res = new PlacePieceResult();
-        res.opponent = request.opponent;
-        res.status = false;
-        clients.get(id).sendPacket(new Packet(res));
-        serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to place a piece, but it failed");
+        if (!wasSuccessful) {
+            // If we did not return above, the placement was invalid, indicate to user
+            PlacePieceResult res = new PlacePieceResult();
+            res.opponent = request.opponent;
+            res.status = false;
+            clients.get(id).sendPacket(new Packet(res));
+            serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to place a piece, but it failed");
+        } else {
+            UpdateGame updateGamePayload = new UpdateGame();
+            updateGamePayload.game = g;
+            updateGameMembers(g, new Packet(updateGamePayload));
+
+            TurnSwitch setTurnPayload = new TurnSwitch();
+            setTurnPayload.p1 = g.player1;
+            setTurnPayload.p2 = g.player2;
+            setTurnPayload.newTurn = Game.Player.PLAYER1;
+            updateGameMembers(g, new Packet(setTurnPayload));
+        }
+    }
+
+    // Sets piece.front
+    private void placeAtRandomPosition(ArrayList<Piece> otherPieces, Piece p) {
+        Random r = new Random();
+        boolean isValid = false;
+        while (!isValid) {
+            p.front = new Coordinate(r.nextInt(10), r.nextInt(10));
+            isValid = isValidPieceLocation(otherPieces, p);
+        }
+    }
+
+    private void generateAIPositions(Game g) {
+        System.out.println("Generating AI board positions");
+        g.player2Pieces.clear();
+        Random r = new Random();
+        {
+            Piece p1 = new Piece();
+            p1.orientation = r.nextBoolean() ? Piece.PieceOrientation.DOWN : Piece.PieceOrientation.RIGHT;
+            p1.type = Piece.PieceType.CARRIER;
+            placeAtRandomPosition(g.player2Pieces, p1);
+            g.player2Pieces.add(p1);
+        }
+        {
+            Piece p1 = new Piece();
+            p1.orientation = r.nextBoolean() ? Piece.PieceOrientation.DOWN : Piece.PieceOrientation.RIGHT;
+            p1.type = Piece.PieceType.BATTLESHIP;
+            placeAtRandomPosition(g.player2Pieces, p1);
+            g.player2Pieces.add(p1);
+        }
+        {
+            Piece p1 = new Piece();
+            p1.orientation = r.nextBoolean() ? Piece.PieceOrientation.DOWN : Piece.PieceOrientation.RIGHT;
+            p1.type = Piece.PieceType.CRUISER;
+            placeAtRandomPosition(g.player2Pieces, p1);
+            g.player2Pieces.add(p1);
+        }
+        {
+            Piece p1 = new Piece();
+            p1.orientation = r.nextBoolean() ? Piece.PieceOrientation.DOWN : Piece.PieceOrientation.RIGHT;
+            p1.type = Piece.PieceType.SUBMARINE;
+            placeAtRandomPosition(g.player2Pieces, p1);
+            g.player2Pieces.add(p1);
+        }
+        {
+            Piece p1 = new Piece();
+            p1.orientation = r.nextBoolean() ? Piece.PieceOrientation.DOWN : Piece.PieceOrientation.RIGHT;
+            p1.type = Piece.PieceType.DESTROYER;
+            placeAtRandomPosition(g.player2Pieces, p1);
+            g.player2Pieces.add(p1);
+        }
+        System.out.println("Finished generating AI board positions");
+        System.out.println("AI size: " + g.player2Pieces.size());
+    }
+
+    private boolean isValidMove(ArrayList<Move> otherMoves, Move m) {
+        for (Move otherMove : otherMoves) {
+            if (otherMove.position.equals(m.position)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private Move getNextAIMove(ArrayList<Move> alreadyMadeMoves) {
+        Random r = new Random();
+        Move newMove = new Move(serverUser.uuid);
+        newMove.position = new Coordinate(r.nextInt(10), r.nextInt(10));
+        while (!isValidMove(alreadyMadeMoves, newMove)) {
+            newMove.position = new Coordinate(r.nextInt(10), r.nextInt(10));
+        }
+        return newMove;
     }
 
     private void executeMakeMove(UUID id, Packet p) {
         MakeMove request = (MakeMove) p.data;
         Game g = dataManager.getGame(id, request.otherUser);
-        if (g.user1Pieces.size() == 5 && g.user2Pieces.size() == 5) {
+        if (g.player1Pieces.size() == 5 && g.player2Pieces.size() == 5 && g.winner == Game.Player.NONE) {
             // Only allow moves here since this means both players have placed their pieces down
-            //TODO
-            serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to make a move");
-            //dataManager.users.get(winner).xp += 50;
-            //sendUpdatedUserList();
+            MoveResult res = new MoveResult();
+            UUID sendingPlayer = null;
+            boolean isP1 = false;
+            boolean isVSAI = false;
+            res.didHit = false;
+            if (id.equals(g.player1)) {
+                res.status = isValidMove(g.player1Moves, request.move);
+                sendingPlayer = g.player1;
+                isP1 = true;
+                isVSAI = g.player2.equals(serverUser.uuid);
+                res.opponent = g.player2;
+                if (isSpaceTaken(g.player2Pieces, request.move.position)) {
+                    res.didHit = true;
+                }
+                g.turn = Game.Player.PLAYER2;
+                request.move.isHit = res.didHit;
+                g.player1Moves.add(request.move);
+            } else if (id.equals(g.player2)) {
+                res.status = isValidMove(g.player2Moves, request.move);
+                sendingPlayer = g.player2;
+                res.opponent = g.player1;
+                if (isSpaceTaken(g.player1Pieces, request.move.position)) {
+                    res.didHit = true;
+                }
+                request.move.isHit = res.didHit;
+                g.turn = Game.Player.PLAYER1;
+                g.player2Moves.add(request.move);
+            } else {
+                serverLogCallback.accept(getLogClientDescriptor(id) + " does not belong to game, but tried to make move!");
+                return;
+            }
+
+            serverLogCallback.accept(getLogClientDescriptor(id) + " attempted to make a move " + request.move);
+            clients.get(id).sendPacket(new Packet(res));
+
+            if (res.status && !isVSAI) {
+                TurnSwitch setTurnPayload = new TurnSwitch();
+                setTurnPayload.p1 = g.player1;
+                setTurnPayload.p2 = g.player2;
+                setTurnPayload.newTurn = g.turn;
+                updateGameMembers(g, new Packet(setTurnPayload));
+            }
+
+            if (res.didHit) {
+                serverLogCallback.accept(getLogClientDescriptor(id) + " hit with their move");
+                g.updateGameOver(isP1 ? Game.Player.PLAYER1 : Game.Player.PLAYER2);
+                if (g.winner != Game.Player.NONE) {
+                    UpdateGame gameEndingPayload = new UpdateGame();
+                    gameEndingPayload.game = g;
+                    gameEndingPayload.user1 = g.player1;
+                    gameEndingPayload.user2 = g.player2;
+                    updateGameMembers(g, new Packet(gameEndingPayload));
+
+                    dataManager.users.get(sendingPlayer).xp += 50;
+                    sendUpdatedUserList();
+
+                    serverLogCallback.accept(getLogClientDescriptor(id) + " won the game against " + getLogClientDescriptor(res.opponent) + "!");
+                    return;
+                }
+            } else {
+                serverLogCallback.accept(getLogClientDescriptor(id) + " missed with their move");
+            }
+
+            if (isVSAI) {
+                System.out.println("Making AI move");
+                // Make AI move
+                Move newMove = getNextAIMove(g.player2Moves);
+                g.turn = Game.Player.PLAYER1;
+                if (isSpaceTaken(g.player1Pieces, newMove.position)) {
+                    newMove.isHit = true;
+                }
+                g.player2Moves.add(newMove);
+                if (newMove.isHit) {
+                    g.updateGameOver(Game.Player.PLAYER2);
+                    if (g.winner != Game.Player.NONE) {
+                        UpdateGame gameEndingPayload = new UpdateGame();
+                        gameEndingPayload.game = g;
+                        gameEndingPayload.user1 = g.player1;
+                        gameEndingPayload.user2 = g.player2;
+                        updateGameMembers(g, new Packet(gameEndingPayload));
+
+                        dataManager.users.get(serverUser.uuid).xp += 50;
+                        sendUpdatedUserList();
+
+                        serverLogCallback.accept(getLogClientDescriptor(id) + " won the game against " + getLogClientDescriptor(res.opponent) + "!");
+                        return;
+                    }
+                }
+            }
+
+            UpdateGame gameStatusChangedPayload = new UpdateGame();
+            gameStatusChangedPayload.game = g;
+            gameStatusChangedPayload.user1 = g.player1;
+            gameStatusChangedPayload.user2 = g.player2;
+            updateGameMembers(g, new Packet(gameStatusChangedPayload));
         }
+        MoveResult res = new MoveResult();
+        res.status = false;
+        res.didHit = false;
+        res.opponent = null;
+        clients.get(id).sendPacket(new Packet(res));
     }
 
     private void executeJoinPrivateGame(UUID id, Packet p) {
@@ -728,13 +940,22 @@ public class Server {
             dataManager.games.forEach((k, v) -> {
                 boolean isPlayer1 = v.player1 != null && v.player1.equals(id);
                 if (isPlayer1 || (v.player2 != null && v.player2.equals(id))) {
+                    serverLogCallback.accept("Player left game, making other player winner");
+                    System.out.println("Other player is " + (isPlayer1 ? v.player2 : v.player1));
                     UpdateGame gameEndingPayload = new UpdateGame();
                     gameEndingPayload.game = v;
                     gameEndingPayload.game.winner = isPlayer1 ? Game.Player.PLAYER2 : Game.Player.PLAYER1;
                     gameEndingPayload.game.turn = Game.Player.NONE;
-                    clients.get(isPlayer1 ? v.player2 : v.player1).sendPacket(new Packet(gameEndingPayload));
+                    UUID winnerID = isPlayer1 ? v.player2 : v.player1;
+                    if (clients.containsKey(winnerID)) {
+                        System.out.println("Sending packet to other player");
+                        System.out.println(gameEndingPayload.game);
+                        clients.get(winnerID).sendPacket(new Packet(gameEndingPayload));
+                        if (dataManager.users.containsKey(winnerID)) {
+                            dataManager.users.get(winnerID).xp += 50;
+                        }
+                    }
 
-                    dataManager.users.get(isPlayer1 ? v.player2 : v.player1).xp += 50;
                     sendUpdatedUserList();
                 }
             });

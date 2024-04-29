@@ -11,7 +11,7 @@ public class Component {
     public static final Point3D UP = new Point3D(0.0, -1.0, 0.0);
     public static final Point3D RIGHT = new Point3D(1.0, 0.0, 0.0);
     public enum ComponentType {
-        ANIMATION_CONTROLLER, FP_CAMERA, MESH3D, MOVABLE, BOX3D, POINT_LIGHT, AMBIENT_LIGHT, ORBITAL_CAMERA, FOLLOW, NONE
+        ANIMATION_CONTROLLER, FP_CAMERA, MESH3D, MOVABLE, BOX3D, POINT_LIGHT, AMBIENT_LIGHT, ORBITAL_CAMERA, FOLLOW, SPAWNER, NONE
     }
 
     // Any arbitrary GameObject component

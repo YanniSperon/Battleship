@@ -26,6 +26,7 @@ public class Box3DComponent extends MovableComponent {
     @Override
     public void onAdded() {
         gameObject.childrenHolder.getChildren().add(this.box);
+        box.setUserData(this.gameObject);
     }
 
     @Override

@@ -25,9 +25,12 @@ public class GUIClient extends Application {
     public static UUID currentActiveGame = null;
     public static UUID globalChat = null;
     public static Stage primaryStage = null;
+    public static boolean isPlaying = false;
 
     public static double volumeMusic = 0.03;
-    public static double volumeSFX = 0.05;
+    public static double volumeMenuSFX = 0.05;
+    public static double volumeGame = 0.05;
+    public static double volumeGameMusic = 0.02;
 
     public static void main(String[] args) {
         launch(args);
@@ -60,6 +63,7 @@ public class GUIClient extends Application {
         createLoginGUI();
         createHomeGUI();
         createGameGUI();
+        createSettingsGUI();
 
         viewMap.forEach((k,v) -> {
             v.scene.heightProperty().addListener((obs, oldVal, newVal) -> {
@@ -71,8 +75,8 @@ public class GUIClient extends Application {
             v.controller.postInit();
         });
 
-        //primaryStage.setScene(viewMap.get("login").scene);
-        primaryStage.setScene(viewMap.get("game").scene);
+        primaryStage.setScene(viewMap.get("login").scene);
+        //primaryStage.setScene(viewMap.get("game").scene);
         primaryStage.setTitle("Not logged in");
         primaryStage.show();
 
@@ -107,6 +111,17 @@ public class GUIClient extends Application {
         try {
             Parent root = FXMLLoader.load(getClass().getResource("/FXML/game.fxml"));
             viewMap.get("game").scene = new Scene(root, WIDTH, HEIGHT, true);
+        } catch (Exception e) {
+            System.out.println("Missing resources!");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    public void createSettingsGUI() {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/FXML/settings.fxml"));
+            viewMap.get("settings").scene = new Scene(root, WIDTH, HEIGHT, true);
         } catch (Exception e) {
             System.out.println("Missing resources!");
             e.printStackTrace();

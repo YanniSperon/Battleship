@@ -13,9 +13,15 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.MeshView;
 
 import java.util.ArrayList;
+import java.util.UUID;
+import java.util.function.Consumer;
 
+// Used as just selectable component
 public class MovableComponent extends Component {
     public boolean isSelected = false;
+
+    public Consumer<UUID> onPressedCallback = null;
+    public boolean canSelect = true;
 
     public MovableComponent() {
         this.type = ComponentType.MOVABLE;
@@ -109,12 +115,19 @@ public class MovableComponent extends Component {
         if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_PRESSED)) {
             if (mouseEvent.isPrimaryButtonDown()) {
                 PickResult res = mouseEvent.getPickResult();
-                System.out.println("Intersected at " + res.getIntersectedPoint());
-                if (isPickableComponent(res.getIntersectedNode()) && !isSelected) {
-                    onSelected();
+                if (isPickableComponent(res.getIntersectedNode())) {
+                    if (onPressedCallback != null) {
+                        onPressedCallback.accept(this.gameObject.id);
+                    }
+                    if (!isSelected && canSelect) {
+                        onSelected();
+                    }
                 } else {
-                    onDeselected();
+                    if (canSelect) {
+                        onDeselected();
+                    }
                 }
+
             }
         }
         return false;

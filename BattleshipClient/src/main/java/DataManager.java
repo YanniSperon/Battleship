@@ -130,6 +130,7 @@ public class DataManager {
         if (u1 == null || u2 == null) {
             return null;
         }
+        System.out.println("Getting game with id1: " + u1.toString() + " id2: " + u2.toString());
         if (u1.compareTo(u2) < 0) {
             UUID temp = u1;
             u1 = u2;
@@ -146,6 +147,7 @@ public class DataManager {
         if (u1 == null || u2 == null || game == null) {
             return;
         }
+        System.out.println("Setting game with id1: " + u1.toString() + " id2: " + u2.toString() + " to " + game);
         if (u1.compareTo(u2) < 0) {
             UUID temp = u1;
             u1 = u2;

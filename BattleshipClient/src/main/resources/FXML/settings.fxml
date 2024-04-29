@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background4" stylesheets="@../styles/home.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="SettingsController">
+    <ImageView fitHeight="100.0" fitWidth="358.0" layoutX="17.0" layoutY="14.0" preserveRatio="true" styleClass="titleIndicator" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0">
+        <image>
+            <Image url="@../images/Settings.png" />
+        </image>
+    </ImageView>
+    <Button fx:id="backButton" focusTraversable="false" layoutY="437.0" mnemonicParsing="false" onAction="#backButtonPressed" onMouseEntered="#onMouseEnteredBackButton" prefHeight="50.0" prefWidth="103.0" styleClass="backButton" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" />
+   <HBox alignment="CENTER_LEFT" disable="true" layoutX="199.0" layoutY="147.0" prefHeight="38.0" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="250.0">
+      <children>
+          <Label prefWidth="325.0" styleClass="settingsFont" text="GAME VOLUME" HBox.hgrow="ALWAYS" />
+          <Slider fx:id="gameVolumeSlider" blockIncrement="5.0" layoutX="648.0" layoutY="463.0" majorTickUnit="10.0" minorTickCount="1" onMousePressed="#onMouseInteractedSlider" onMouseReleased="#onMouseInteractedSlider" prefHeight="18.0" prefWidth="200.0" snapToTicks="true" style="-fx-accent-color: #045ed7;" styleClass="settingsSlider" value="30.0" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+      </children>
+   </HBox>
+   <HBox alignment="CENTER_LEFT" layoutX="50.0" layoutY="160.0" prefHeight="38.0" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="200.0">
+      <children>
+         <Label prefWidth="325.0" styleClass="settingsFont" text="MUSIC VOLUME" HBox.hgrow="ALWAYS" />
+         <Slider fx:id="musicVolumeSlider" blockIncrement="5.0" layoutX="648.0" layoutY="463.0" majorTickUnit="10.0" minorTickCount="1" onMousePressed="#onMouseInteractedSlider" onMouseReleased="#onMouseInteractedSlider" prefHeight="18.0" prefWidth="200.0" snapToTicks="true" style="-fx-accent-color: #045ed7;" styleClass="settingsSlider" value="30.0" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+      </children>
+   </HBox>
+   <HBox alignment="CENTER_LEFT" layoutX="50.0" layoutY="210.0" prefHeight="38.0" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="150.0">
+      <children>
+         <Label prefWidth="325.0" styleClass="settingsFont" text="MENU VOLUME" HBox.hgrow="ALWAYS" />
+         <Slider fx:id="menuVolumeSlider" blockIncrement="5.0" layoutX="648.0" layoutY="463.0" majorTickUnit="10.0" minorTickCount="1" onMousePressed="#onMouseInteractedSlider" onMouseReleased="#onMouseInteractedSlider" prefHeight="18.0" prefWidth="200.0" snapToTicks="true" style="-fx-accent-color: #045ed7;" styleClass="settingsSlider" value="30.0" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+      </children>
+   </HBox>
+   <HBox alignment="CENTER_LEFT" layoutX="50.0" layoutY="260.0" prefHeight="38.0" AnchorPane.leftAnchor="40.0" AnchorPane.topAnchor="300.0">
+      <children>
+         <Label prefWidth="325.0" styleClass="settingsFont" text="GAME MUSIC VOLUME" HBox.hgrow="ALWAYS" />
+         <Slider fx:id="gameMusicVolumeSlider" blockIncrement="5.0" layoutX="648.0" layoutY="463.0" majorTickUnit="10.0" minorTickCount="1" onMousePressed="#onMouseInteractedSlider" onMouseReleased="#onMouseInteractedSlider" prefHeight="18.0" prefWidth="200.0" snapToTicks="true" style="-fx-accent-color: #045ed7;" styleClass="settingsSlider" value="30.0" AnchorPane.bottomAnchor="20.0" AnchorPane.rightAnchor="20.0" />
+      </children>
+   </HBox>
+</AnchorPane>
