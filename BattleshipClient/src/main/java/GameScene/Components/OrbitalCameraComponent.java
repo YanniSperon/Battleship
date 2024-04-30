@@ -37,7 +37,9 @@ public class OrbitalCameraComponent extends Component {
     public double maxDistFromCenter = 20.0;
 
     private double mouseX;
+    private double oldMouseX;
     private double mouseY;
+    private double oldMouseY;
 
     @Override
     public boolean onMouseEvent(MouseEvent mouseEvent) {
@@ -45,8 +47,8 @@ public class OrbitalCameraComponent extends Component {
             mouseX = mouseEvent.getSceneX();
             mouseY = mouseEvent.getSceneY();
         } else if (mouseEvent.getEventType().equals(MouseEvent.MOUSE_DRAGGED)) {
-            double oldMouseX = mouseX;
-            double oldMouseY = mouseY;
+            oldMouseX = mouseX;
+            oldMouseY = mouseY;
 
             mouseX = mouseEvent.getSceneX();
             mouseY = mouseEvent.getSceneY();
@@ -54,16 +56,25 @@ public class OrbitalCameraComponent extends Component {
             if (mouseEvent.isMiddleButtonDown()) {
                 if (!mouseEvent.isShiftDown()) {
                     // Orbit
-                    gameObject.setXRotation(clamp(-85.0, gameObject.getXRotation() - ((mouseY - oldMouseY) * mouseSensitivityY), 85.0));
-                    gameObject.setYRotation(gameObject.getYRotation() + ((mouseX - oldMouseX) * mouseSensitivityX));
+                    orbitCamera();
                 } else {
                     // Pan
                     gameObject.setTranslation(gameObject.getTranslation().add(getRightDirectionWS().multiply(-(mouseX - oldMouseX) * panSpeed).add(getUpDirectionWS().multiply((mouseY - oldMouseY) * panSpeed))));
                 }
                 return true;
+            } else if (mouseEvent.isPrimaryButtonDown()) {
+                if (mouseEvent.isShiftDown()) {
+                    // Orbit
+                    orbitCamera();
+                }
             }
         }
         return false;
+    }
+
+    private void orbitCamera() {
+        gameObject.setXRotation(clamp(-85.0, gameObject.getXRotation() - ((mouseY - oldMouseY) * mouseSensitivityY), 85.0));
+        gameObject.setYRotation(gameObject.getYRotation() + ((mouseX - oldMouseX) * mouseSensitivityX));
     }
 
     @Override
