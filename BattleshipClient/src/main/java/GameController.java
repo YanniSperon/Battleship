@@ -27,13 +27,27 @@ import java.util.*;
 public class GameController implements CustomController, Initializable {
     public Group root;
 
+    private final ArrayList<UUID> enemyPlacingIndicators = new ArrayList<UUID>();
+    private final ArrayList<UUID> friendlyPlacingIndicators = new ArrayList<UUID>();
 
-    private void refreshGUI() {
-        synchronized (GUIClient.clientConnection.dataManager) {
-        }
-    }
+    private final HashMap<UUID, GameObject> gameObjects = new HashMap<UUID, GameObject>();
+    private final ArrayList<UUID> ships = new ArrayList<UUID>();
 
+    private MeshView waitingMessage;
     private Game.Player ourPlayer = null;
+
+    private UUID selectedSquare = null;
+    private VisualPiece currentHeldPiece = null;
+    private boolean isCurrentHeldPieceOverGridSpace = false;
+
+    private UUID cameraID = null;
+
+    public MediaPlayer mediaPlayer = null;
+    private AudioClip actionSFX;
+    private AudioClip fireSFX;
+    private AudioClip hitSFX;
+
+    public Game oldGame = null;
 
     @Override
     public void postInit() {
@@ -101,7 +115,7 @@ public class GameController implements CustomController, Initializable {
             isCurrentHeldPieceOverGridSpace = true;
             currentHeldPiece.visual.setTranslation(to);
             int i = friendlyPlacingIndicators.indexOf(obj);
-            currentHeldPiece.p.front = indexToCoordinates(i);
+            currentHeldPiece.p.front = Coordinate.indexToCoordinates(i);
         }
     }
 
@@ -121,9 +135,6 @@ public class GameController implements CustomController, Initializable {
         public Piece p;
     }
 
-    private VisualPiece currentHeldPiece = null;
-    private boolean isCurrentHeldPieceOverGridSpace = false;
-
     @Override
     public void updateUI(GUICommand command) {
         if (GUIClient.clientConnection.uuid != null && GUIClient.currentActiveGame != null && GUIClient.clientConnection.dataManager.isValidUser(GUIClient.currentActiveGame)) {
@@ -132,11 +143,9 @@ public class GameController implements CustomController, Initializable {
                 case GAME_FOUND:
                     break;
                 case PLACE_PIECE_SUCCESS:
-                    System.out.println("Placing piece success");
                     placePiece(g);
                     break;
                 case PLACE_PIECE_ERROR:
-                    System.out.println("Placing piece error");
                     removePieceFromHandError();
                     break;
                 case MOVE_SUCCESS_HIT:
@@ -146,7 +155,6 @@ public class GameController implements CustomController, Initializable {
                 case MOVE_FAIL:
                     break;
                 case REFRESH:
-                    System.out.println("On refresh");
                     updateBoard(g);
                     break;
                 default:
@@ -193,13 +201,21 @@ public class GameController implements CustomController, Initializable {
     }
 
     private void updateBoard(Game g) {
-        System.out.println("Updating board");
-        System.out.println(g);
         if (g.winner != Game.Player.NONE) {
             // Game over
             onGameEnded();
             return;
         }
+
+        Game deltaGame = null;
+        if (oldGame != null) {
+            deltaGame = g.getDelta(oldGame);
+            oldGame = g;
+        } else {
+            deltaGame = g;
+            oldGame = deltaGame;
+        }
+        System.out.println(deltaGame);
 
         boolean isP1 = GUIClient.clientConnection.uuid.equals(g.player1);
         ourPlayer = isP1 ? Game.Player.PLAYER1 : Game.Player.PLAYER2;
@@ -217,7 +233,7 @@ public class GameController implements CustomController, Initializable {
             }
             // We are player 1, player 2 moves displayed on our board
             for (Move m : g.player2Moves) {
-                UUID indicatorID = friendlyPlacingIndicators.get(coordinatesToIndex(m.position));
+                UUID indicatorID = friendlyPlacingIndicators.get(Coordinate.coordinatesToIndex(m.position));
                 Box3DComponent b3dc = (Box3DComponent) gameObjects.get(indicatorID).getComponentOfType(Component.ComponentType.BOX3D);
                 if (m.isHit) {
                     b3dc.box.setMaterial(MaterialManager.load("Hit.mat"));
@@ -228,7 +244,7 @@ public class GameController implements CustomController, Initializable {
             }
 
             for (Move m : g.player1Moves) {
-                UUID indicatorID = enemyPlacingIndicators.get(coordinatesToIndex(m.position));
+                UUID indicatorID = enemyPlacingIndicators.get(Coordinate.coordinatesToIndex(m.position));
                 Box3DComponent b3dc = (Box3DComponent) gameObjects.get(indicatorID).getComponentOfType(Component.ComponentType.BOX3D);
                 if (m.isHit) {
                     b3dc.box.setMaterial(MaterialManager.load("Hit.mat"));
@@ -249,7 +265,7 @@ public class GameController implements CustomController, Initializable {
             }
             // We are player 2, player 1 moves displayed on our board
             for (Move m : g.player1Moves) {
-                UUID indicatorID = friendlyPlacingIndicators.get(coordinatesToIndex(m.position));
+                UUID indicatorID = friendlyPlacingIndicators.get(Coordinate.coordinatesToIndex(m.position));
                 Box3DComponent b3dc = (Box3DComponent) gameObjects.get(indicatorID).getComponentOfType(Component.ComponentType.BOX3D);
                 if (m.isHit) {
                     b3dc.box.setMaterial(MaterialManager.load("Hit.mat"));
@@ -260,7 +276,7 @@ public class GameController implements CustomController, Initializable {
             }
 
             for (Move m : g.player2Moves) {
-                UUID indicatorID = enemyPlacingIndicators.get(coordinatesToIndex(m.position));
+                UUID indicatorID = enemyPlacingIndicators.get(Coordinate.coordinatesToIndex(m.position));
                 Box3DComponent b3dc = (Box3DComponent) gameObjects.get(indicatorID).getComponentOfType(Component.ComponentType.BOX3D);
                 if (m.isHit) {
                     b3dc.box.setMaterial(MaterialManager.load("Hit.mat"));
@@ -272,20 +288,10 @@ public class GameController implements CustomController, Initializable {
     }
 
     private void placePiece(Game g) {
-        System.out.println("Placing piece");
         removePieceFromHand();
         currentHeldPiece = null;
         updateBoard(g);
     }
-
-    private void disallowPressingPersonal() {
-        System.out.println("Disallowing personal pressing");
-        for (UUID locID : friendlyPlacingIndicators) {
-            gameObjects.get(locID).childrenHolder.setMouseTransparent(true);
-        }
-    }
-
-    MeshView waitingMessage;
 
     private void hideWaitingMessage() {
         waitingMessage.setVisible(false);
@@ -312,6 +318,7 @@ public class GameController implements CustomController, Initializable {
     }
 
     private void onGameEnded() {
+        oldGame = null;
 
         resetBoard();
         resetShipPositions();
@@ -328,36 +335,8 @@ public class GameController implements CustomController, Initializable {
     }
 
     private Point3D toOurCoordinates(Point3D blenderCoordinates) {
-        //return new Point3D(blenderCoordinates.getY(), -blenderCoordinates.getZ(), -blenderCoordinates.getX());
         return new Point3D(blenderCoordinates.getX(), -blenderCoordinates.getZ(), blenderCoordinates.getY());
     }
-
-    private void generateBoardPegs() {
-//        GameObject enemyPegs = new GameObject();
-//        SpawnerComponent enemyPegSpawner = new SpawnerComponent();
-//        enemyPegSpawner.min = toOurCoordinates(new Point3D(-0.630109, -1.0764, 1.67897));
-//        enemyPegSpawner.max = toOurCoordinates(new Point3D(-0.041363, 0.298623, 0.436606));
-//        enemyPegSpawner.materialToApply = MaterialManager.load("Hit.mat");
-//        enemyPegSpawner.meshToSpawn = MeshManager.load("Peg.obj").mesh;
-//        enemyPegSpawner.stepsX = 10;
-//        enemyPegSpawner.stepsY = 10;
-//        enemyPegs.addComponent(enemyPegSpawner);
-//        gameObjects.put(enemyPegs.id, enemyPegs);
-//
-//        GameObject friendlyPegs = new GameObject();
-//        SpawnerComponent friendlyPegSpawner = new SpawnerComponent();
-//        friendlyPegSpawner.min = toOurCoordinates(new Point3D(0.693604, -1.07643, 0.170897));
-//        friendlyPegSpawner.max = toOurCoordinates(new Point3D(1.91595, 0.451241, 0.170897));
-//        friendlyPegSpawner.materialToApply = MaterialManager.load("Miss.mat");
-//        friendlyPegSpawner.meshToSpawn = MeshManager.load("Peg.obj").mesh;
-//        friendlyPegSpawner.stepsX = 10;
-//        friendlyPegSpawner.stepsY = 10;
-//        enemyPegs.addComponent(friendlyPegSpawner);
-//        gameObjects.put(friendlyPegs.id, friendlyPegs);
-    }
-
-    private final ArrayList<UUID> enemyPlacingIndicators = new ArrayList<UUID>();
-    private final ArrayList<UUID> friendlyPlacingIndicators = new ArrayList<UUID>();
 
     private void generatePlacingIndicators() {
         // Generate enemy board
@@ -444,22 +423,10 @@ public class GameController implements CustomController, Initializable {
         }
     }
 
-    private UUID selectedSquare = null;
-
     private void triggerSelect(UUID id) {
         selectedSquare = id;
         actionSFX.play();
     }
-
-    private int coordinatesToIndex(Coordinate c) {
-        return c.Y * 10 + c.X;
-    }
-
-    private Coordinate indexToCoordinates(int index) {
-        return new Coordinate(index % 10, index / 10);
-    }
-
-    ArrayList<UUID> ships = new ArrayList<UUID>();
 
     private void resetShipPositions() {
         gameObjects.get(ships.get(0)).setTranslation(toOurCoordinates(new Point3D(0.306967, -1.07643, 0.170897)));
@@ -479,21 +446,8 @@ public class GameController implements CustomController, Initializable {
         gameObjects.get(ships.get(4)).setYRotation(0.0);
     }
 
-    HashMap<UUID, GameObject> gameObjects = new HashMap<UUID, GameObject>();
-    UUID cameraID = null;
-
-    public MediaPlayer mediaPlayer = null;
-
-    AudioClip actionSFX;
-    AudioClip fireSFX;
-    AudioClip hitSFX;
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
-        System.out.println("Initializing");
-        System.out.println("Initializing");
-        System.out.println("Initializing");
-        System.out.println("Initializing");
         GUIClient.viewMap.put("game", new GUIView(null, this));
 
         actionSFX = new AudioClip(getClass().getResource("/audio/Ping.mp3").toExternalForm());
@@ -520,7 +474,6 @@ public class GameController implements CustomController, Initializable {
 
 
         GameObject cameraComp = new GameObject();
-        //g1.addComponent(new FPCameraComponent());
         OrbitalCameraComponent occ = new OrbitalCameraComponent();
         cameraComp.addComponent(occ);
         cameraComp.setTranslation(0.6, -0.75, 0.0);
@@ -634,7 +587,6 @@ public class GameController implements CustomController, Initializable {
         waitingMessage.setMaterial(MaterialManager.load("WaitingForYou.mat"));
         g3.childrenHolder.getChildren().add(waitingMessage);
 
-        generateBoardPegs();
         generatePlacingIndicators();
 
         createShips();
@@ -670,7 +622,7 @@ public class GameController implements CustomController, Initializable {
                             int index = enemyPlacingIndicators.indexOf(selectedSquare);
                             MakeMove m = new MakeMove();
                             m.move = new Move(GUIClient.clientConnection.uuid);
-                            m.move.position = indexToCoordinates(index);
+                            m.move.position = Coordinate.indexToCoordinates(index);
                             m.otherUser = GUIClient.currentActiveGame;
                             GUIClient.clientConnection.send(new Packet(m));
                         }
@@ -696,111 +648,35 @@ public class GameController implements CustomController, Initializable {
         selectedSquare = null;
     }
 
-    private void createShips() {
-        {
-            GameObject AircraftCarrier = new GameObject();
-            Mesh3DComponent m3dc = new Mesh3DComponent();
-            m3dc.mesh3D = MeshManager.load("AircraftCarrier.obj");
-            AircraftCarrier.addComponent(m3dc);
-            m3dc.meshView.setMaterial(MaterialManager.load("Team1.mat"));
-            m3dc.canSelect = false;
-            m3dc.onPressedCallback = (UUID id) -> {
-                currentHeldPiece = new VisualPiece();
-                currentHeldPiece.visual = AircraftCarrier;
-                currentHeldPiece.p = new Piece();
-                currentHeldPiece.p.orientation = Piece.PieceOrientation.RIGHT;
-                currentHeldPiece.p.type = Piece.PieceType.CARRIER;
-                currentHeldPiece.visual.childrenHolder.setMouseTransparent(true);
-                m3dc.meshView.setMaterial(MaterialManager.load("PlacingShip.mat"));
-                actionSFX.play();
-            };
-            gameObjects.put(AircraftCarrier.id, AircraftCarrier);
-            ships.add(AircraftCarrier.id);
-        }
-        {
-            GameObject Battleship = new GameObject();
-            Mesh3DComponent m3dc = new Mesh3DComponent();
-            m3dc.mesh3D = MeshManager.load("Battleship.obj");
-            Battleship.addComponent(m3dc);
-            m3dc.meshView.setMaterial(MaterialManager.load("Team1.mat"));
-            m3dc.canSelect = false;
-            m3dc.onPressedCallback = (UUID id) -> {
-                System.out.println("Current held piece now batleship");
-                currentHeldPiece = new VisualPiece();
-                currentHeldPiece.visual = Battleship;
-                currentHeldPiece.p = new Piece();
-                currentHeldPiece.p.orientation = Piece.PieceOrientation.RIGHT;
-                currentHeldPiece.p.type = Piece.PieceType.BATTLESHIP;
-                currentHeldPiece.visual.childrenHolder.setMouseTransparent(true);
-                m3dc.meshView.setMaterial(MaterialManager.load("PlacingShip.mat"));
-                actionSFX.play();
-            };
-            gameObjects.put(Battleship.id, Battleship);
-            ships.add(Battleship.id);
-        }
-        {
-            GameObject Cruiser = new GameObject();
-            Mesh3DComponent m3dc = new Mesh3DComponent();
-            m3dc.mesh3D = MeshManager.load("Cruiser.obj");
-            Cruiser.addComponent(m3dc);
-            m3dc.meshView.setMaterial(MaterialManager.load("Team1.mat"));
-            m3dc.canSelect = false;
-            m3dc.onPressedCallback = (UUID id) -> {
-                currentHeldPiece = new VisualPiece();
-                currentHeldPiece.visual = Cruiser;
-                currentHeldPiece.p = new Piece();
-                currentHeldPiece.p.orientation = Piece.PieceOrientation.RIGHT;
-                currentHeldPiece.p.type = Piece.PieceType.CRUISER;
-                currentHeldPiece.visual.childrenHolder.setMouseTransparent(true);
-                m3dc.meshView.setMaterial(MaterialManager.load("PlacingShip.mat"));
-                actionSFX.play();
-            };
-            gameObjects.put(Cruiser.id, Cruiser);
-            ships.add(Cruiser.id);
-        }
-        {
-            GameObject Submarine = new GameObject();
-            Mesh3DComponent m3dc = new Mesh3DComponent();
-            m3dc.mesh3D = MeshManager.load("Submarine.obj");
-            Submarine.addComponent(m3dc);
-            m3dc.meshView.setMaterial(MaterialManager.load("Team1.mat"));
-            m3dc.canSelect = false;
-            m3dc.onPressedCallback = (UUID id) -> {
-                currentHeldPiece = new VisualPiece();
-                currentHeldPiece.visual = Submarine;
-                currentHeldPiece.p = new Piece();
-                currentHeldPiece.p.orientation = Piece.PieceOrientation.RIGHT;
-                currentHeldPiece.p.type = Piece.PieceType.SUBMARINE;
-                currentHeldPiece.visual.childrenHolder.setMouseTransparent(true);
-                m3dc.meshView.setMaterial(MaterialManager.load("PlacingShip.mat"));
-                actionSFX.play();
-            };
-            gameObjects.put(Submarine.id, Submarine);
-            ships.add(Submarine.id);
-        }
-        {
-            GameObject Destroyer = new GameObject();
-            Mesh3DComponent m3dc = new Mesh3DComponent();
-            m3dc.mesh3D = MeshManager.load("Destroyer.obj");
-            Destroyer.addComponent(m3dc);
-            m3dc.meshView.setMaterial(MaterialManager.load("Team1.mat"));
-            m3dc.canSelect = false;
-            m3dc.onPressedCallback = (UUID id) -> {
-                currentHeldPiece = new VisualPiece();
-                currentHeldPiece.visual = Destroyer;
-                currentHeldPiece.p = new Piece();
-                currentHeldPiece.p.orientation = Piece.PieceOrientation.RIGHT;
-                currentHeldPiece.p.type = Piece.PieceType.DESTROYER;
-                currentHeldPiece.visual.childrenHolder.setMouseTransparent(true);
-                m3dc.meshView.setMaterial(MaterialManager.load("PlacingShip.mat"));
-                actionSFX.play();
-            };
-            gameObjects.put(Destroyer.id, Destroyer);
-            ships.add(Destroyer.id);
-        }
+    private void createShip(String meshName, Piece.PieceType type) {
+        GameObject ship = new GameObject();
+        Mesh3DComponent m3dc = new Mesh3DComponent();
+        m3dc.mesh3D = MeshManager.load(meshName);
+        ship.addComponent(m3dc);
+        m3dc.meshView.setMaterial(MaterialManager.load("Team1.mat"));
+        m3dc.canSelect = false;
+        m3dc.onPressedCallback = (UUID id) -> {
+            currentHeldPiece = new VisualPiece();
+            currentHeldPiece.visual = ship;
+            currentHeldPiece.p = new Piece();
+            currentHeldPiece.p.orientation = Piece.PieceOrientation.RIGHT;
+            currentHeldPiece.p.type = type;
+            currentHeldPiece.visual.childrenHolder.setMouseTransparent(true);
+            m3dc.meshView.setMaterial(MaterialManager.load("PlacingShip.mat"));
+            actionSFX.play();
+        };
+        gameObjects.put(ship.id, ship);
+        ships.add(ship.id);
     }
 
-    // Graphics
+    private void createShips() {
+        createShip("AircraftCarrier.obj", Piece.PieceType.CARRIER);
+        createShip("Battleship.obj", Piece.PieceType.BATTLESHIP);
+        createShip("Cruiser.obj", Piece.PieceType.CRUISER);
+        createShip("Submarine.obj", Piece.PieceType.SUBMARINE);
+        createShip("Destroyer.obj", Piece.PieceType.DESTROYER);
+    }
+
     @Override
     public void onRenderUpdate(double deltaTime) {
         gameObjects.forEach((k, v) -> {

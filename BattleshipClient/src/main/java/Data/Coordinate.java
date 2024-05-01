@@ -39,6 +39,14 @@ public class Coordinate implements Serializable {
         return new Coordinate(X * val, Y * val);
     }
 
+    public static int coordinatesToIndex(Coordinate c) {
+        return c.Y * 10 + c.X;
+    }
+
+    public static Coordinate indexToCoordinates(int index) {
+        return new Coordinate(index % 10, index / 10);
+    }
+
     @Override
     public String toString() {
         return "Coordinate(X: \"" + X + "\" Y: \"" + Y + "\")";

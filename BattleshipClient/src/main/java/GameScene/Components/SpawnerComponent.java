@@ -55,14 +55,10 @@ public class SpawnerComponent extends Component {
 
             Point3D deltaPerRow = totalDeltaAcrossRows.multiply(1.0 / (stepsY - 1.0));
             Point3D deltaPerColumn = totalDeltaAcrossColumns.multiply(1.0 / (stepsX - 1.0));
-            System.out.println("Delta per row: " + deltaPerRow);
-            System.out.println("Delta per column: " + deltaPerColumn);
 
             for (int y = 0; y < stepsY; ++y) {
-                System.out.println("Spawning row");
                 Point3D thisRow = min.add(deltaPerRow.multiply(y));
                 for (int x = 0; x < stepsX; ++x) {
-                    System.out.println("Spawning item");
                     Point3D newLoc = thisRow.add(deltaPerColumn.multiply(x));
                     MeshView m = new MeshView(meshToSpawn);
                     m.setMaterial(materialToApply);

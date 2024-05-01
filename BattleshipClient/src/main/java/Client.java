@@ -61,9 +61,6 @@ public class Client extends Thread {
 
     private void executeUpdateGroupChat(UUID id, Packet p) {
         UpdateGroupChat d = (UpdateGroupChat) p.data;
-        for (Data.Message m : d.chat.messages) {
-            System.out.println(m.content);
-        }
         dataManager.setGroupChat(d.groupID, d.chat);
         UIUpdateCallback.accept(new GUICommand(GUICommand.Type.REFRESH));
     }
@@ -81,9 +78,7 @@ public class Client extends Thread {
     }
 
     private void executeUpdateGame(UUID id, Packet p) {
-        System.out.println("Updating game");
         UpdateGame d = (UpdateGame) p.data;
-        System.out.println(d.game);
         dataManager.setGame(d.game.player1, d.game.player2, d.game);
         UIUpdateCallback.accept(new GUICommand(GUICommand.Type.REFRESH));
     }

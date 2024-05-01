@@ -37,27 +37,6 @@ public class HomeController implements CustomController, Initializable {
     public MediaPlayer mediaPlayer;
     private AudioClip navigationSFX;
 
-    public void sendButtonPressed(ActionEvent actionEvent) {
-        synchronized (GUIClient.clientConnection.dataManager) {
-            //String message = messageEntryField.getText();
-            /*String message = "TODO";
-            if (GUIClient.clientConnection.dataManager.isValidGroup(GUIClient.currentActiveChat)) {
-                GroupMessage m = new GroupMessage();
-                m.message.content = message;
-                m.message.sender = GUIClient.clientConnection.uuid;
-                m.receivingGroup = GUIClient.currentActiveChat;
-                GUIClient.clientConnection.send(new Packet(m));
-            } else if (GUIClient.clientConnection.dataManager.isValidUser(GUIClient.currentActiveChat)) {
-                DirectMessage m = new DirectMessage();
-                m.message.content = message;
-                m.message.sender = GUIClient.clientConnection.uuid;
-                m.receiver = GUIClient.currentActiveChat;
-                GUIClient.clientConnection.send(new Packet(m));
-            }*/
-            //messageEntryField.clear();
-        }
-    }
-
     private void onLoginSuccess() {
         GUIClient.primaryStage.setScene(GUIClient.viewMap.get("home").scene);
         synchronized (GUIClient.clientConnection.dataManager) {
@@ -93,11 +72,7 @@ public class HomeController implements CustomController, Initializable {
     @Override
     public void postInit() {
         Scene s = levelProgressBar.getScene();
-        if (s == null) {
-            System.out.println("Scene is null");
-        } else {
-            s.setOnKeyPressed(this::priorityKeyPress);
-        }
+        s.setOnKeyPressed(this::priorityKeyPress);
     }
 
     private void onGameFound() {
