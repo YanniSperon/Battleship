@@ -9,11 +9,13 @@
         <Label fx:id="invalidUsernameIndicator" styleClass="errorMessage" text="Username taken" visible="false"/>
     </HBox>
     <HBox alignment="CENTER" VBox.vgrow="ALWAYS">
-        <TextField fx:id="usernameEntryField" alignment="CENTER" onKeyPressed="#onUsernameEntryKeyPressed" onMouseEntered="#onMouseEnteredUsernameEntry"
+        <TextField fx:id="usernameEntryField" alignment="CENTER" onKeyPressed="#onUsernameEntryKeyPressed"
+                   onMouseEntered="#onMouseEnteredUsernameEntry"
                    promptText="USERNAME" styleClass="textEntryBox" stylesheets="@../styles/login.css"/>
     </HBox>
     <HBox alignment="CENTER" VBox.vgrow="ALWAYS">
-        <Button fx:id="loginButton" alignment="CENTER" onAction="#loginButtonPressed" onMouseEntered="#onMouseEnteredLoginButton" prefHeight="50.0"
+        <Button fx:id="loginButton" alignment="CENTER" onAction="#loginButtonPressed"
+                onMouseEntered="#onMouseEnteredLoginButton" prefHeight="50.0"
                 prefWidth="110.0" styleClass="loginButton"/>
     </HBox>
     <HBox alignment="CENTER" VBox.vgrow="ALWAYS">

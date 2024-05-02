@@ -64,8 +64,9 @@ public class GUIClient extends Application {
         createHomeGUI();
         createGameGUI();
         createSettingsGUI();
+        createGameOverGUI();
 
-        viewMap.forEach((k,v) -> {
+        viewMap.forEach((k, v) -> {
             v.scene.heightProperty().addListener((obs, oldVal, newVal) -> {
                 v.controller.onResizeHeight(oldVal, newVal);
             });
@@ -129,7 +130,19 @@ public class GUIClient extends Application {
         }
     }
 
+    public void createGameOverGUI() {
+        try {
+            Parent root = FXMLLoader.load(getClass().getResource("/FXML/gameover.fxml"));
+            viewMap.get("gameover").scene = new Scene(root, WIDTH, HEIGHT, true);
+        } catch (Exception e) {
+            System.out.println("Missing resources!");
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
     private long currentTime = 0;
+
     public void onRenderUpdate() {
         // Compute deltaTime
         long newTime = System.nanoTime();
@@ -137,7 +150,7 @@ public class GUIClient extends Application {
         double deltaTime = timeDiff * 0.000000001;
         currentTime = newTime;
 
-        viewMap.forEach((k,v) -> {
+        viewMap.forEach((k, v) -> {
             v.controller.onRenderUpdate(deltaTime);
         });
     }

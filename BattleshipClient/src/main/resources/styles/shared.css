@@ -38,6 +38,27 @@
     -fx-background-position: center center;
  }
 
+.background5{
+ 	-fx-background-image: url("../images/BackgroundPhoto5.jpg");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+ }
+
+.background6{
+ 	-fx-background-image: url("../images/BackgroundPhoto6.jpg");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+ }
+
+.background7{
+ 	-fx-background-image: url("../images/BackgroundPhoto7.jpg");
+    -fx-background-repeat: no-repeat;
+    -fx-background-size: cover;
+    -fx-background-position: center center;
+ }
+
 .basicFont{
 	-fx-font-family: 'Agency FB';
     -fx-font-size: 20px;
