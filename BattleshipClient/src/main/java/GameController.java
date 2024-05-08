@@ -202,9 +202,12 @@ public class GameController implements CustomController, Initializable {
     }
 
     private void updateBoard(Game g) {
+        boolean isP1 = GUIClient.clientConnection.uuid.equals(g.player1);
+        ourPlayer = isP1 ? Game.Player.PLAYER1 : Game.Player.PLAYER2;
+
         if (g.winner != Game.Player.NONE) {
             // Game over
-            onGameEnded(g.winner == ourPlayer);
+            onGameEnded(ourPlayer == g.winner);
             return;
         }
 
@@ -217,9 +220,6 @@ public class GameController implements CustomController, Initializable {
             oldGame = deltaGame;
         }
         //System.out.println(deltaGame);
-
-        boolean isP1 = GUIClient.clientConnection.uuid.equals(g.player1);
-        ourPlayer = isP1 ? Game.Player.PLAYER1 : Game.Player.PLAYER2;
 
         opponentsTurnMessage.setVisible(g.turn != ourPlayer);
 
