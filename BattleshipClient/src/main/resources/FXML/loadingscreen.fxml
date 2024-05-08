@@ -3,6 +3,6 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background6" stylesheets="@../styles/home.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GameOverController">
+<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background6" stylesheets="@../styles/shared.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GameOverController">
     <ProgressBar fx:id="levelProgressBar" layoutX="648.0" layoutY="463.0" prefHeight="20.0" progress="0.05" style="-fx-accent-color: #045ed7;" AnchorPane.bottomAnchor="20.0" AnchorPane.leftAnchor="20.0" AnchorPane.rightAnchor="20.0" />
 </AnchorPane>

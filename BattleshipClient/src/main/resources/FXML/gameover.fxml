@@ -4,11 +4,16 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background5" stylesheets="@../styles/home.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GameOverController">
-    <ImageView fitHeight="150.0" fitWidth="712.0" layoutX="17.0" layoutY="14.0" preserveRatio="true" styleClass="titleIndicator" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0">
+<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background5" stylesheets="@../styles/shared.css" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GameOverController">
+    <ImageView fx:id="victoryDisplay" fitHeight="150.0" fitWidth="712.0" layoutX="17.0" layoutY="14.0" preserveRatio="true" styleClass="titleIndicator" visible="false" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0">
         <image>
             <Image url="@../images/Victory.png" />
         </image>
     </ImageView>
-    <Button fx:id="mainMenuButton" focusTraversable="false" layoutX="46.0" layoutY="196.0" mnemonicParsing="false" onAction="#findGameButtonPressed" onMouseEntered="#onMouseEnteredFindGame" prefHeight="50.0" prefWidth="200.0" styleClass="findGameButton" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="40.0" />
+    <ImageView fx:id="defeatDisplay" fitHeight="150.0" fitWidth="712.0" layoutX="17.0" layoutY="14.0" preserveRatio="true" styleClass="titleIndicator" visible="false" AnchorPane.leftAnchor="20.0" AnchorPane.topAnchor="20.0">
+        <image>
+            <Image url="@../images/Defeat.png" />
+        </image>
+    </ImageView>
+    <Button fx:id="mainMenuButton" focusTraversable="false" layoutX="46.0" layoutY="196.0" mnemonicParsing="false" onAction="#mainMenuButtonPressed" onMouseEntered="#onMouseEnteredMainMenu" prefHeight="50.0" prefWidth="102.0" styleClass="backButton" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="40.0" />
 </AnchorPane>

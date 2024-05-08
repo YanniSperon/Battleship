@@ -81,4 +81,30 @@ public class Game implements Serializable {
         }
         this.turn = Player.NONE;
     }
+
+    // Returns a game instance which has elements that only include changes from one to the next
+    public Game getDelta(Game olderGame) {
+        Game deltaGame = new Game();
+        for (Piece p : this.player1Pieces) {
+            if (!olderGame.player1Pieces.contains(p)) {
+                deltaGame.player1Pieces.add(p);
+            }
+        }
+        for (Move m : this.player1Moves) {
+            if (!olderGame.player1Moves.contains(m)) {
+                deltaGame.player1Moves.add(m);
+            }
+        }
+        for (Piece p : this.player2Pieces) {
+            if (!olderGame.player2Pieces.contains(p)) {
+                deltaGame.player2Pieces.add(p);
+            }
+        }
+        for (Move m : this.player2Moves) {
+            if (!olderGame.player2Moves.contains(m)) {
+                deltaGame.player2Moves.add(m);
+            }
+        }
+        return deltaGame;
+    }
 }

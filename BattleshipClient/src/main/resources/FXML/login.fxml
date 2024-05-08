@@ -3,7 +3,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox fx:id="root" alignment="CENTER" styleClass="background" stylesheets="@../styles/login.css"
+<VBox fx:id="root" alignment="CENTER" styleClass="background" stylesheets="@../styles/shared.css"
       xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="LoginController">
     <HBox alignment="CENTER" VBox.vgrow="ALWAYS">
         <Label fx:id="invalidUsernameIndicator" styleClass="errorMessage" text="Username taken" visible="false"/>
@@ -11,7 +11,7 @@
     <HBox alignment="CENTER" VBox.vgrow="ALWAYS">
         <TextField fx:id="usernameEntryField" alignment="CENTER" onKeyPressed="#onUsernameEntryKeyPressed"
                    onMouseEntered="#onMouseEnteredUsernameEntry"
-                   promptText="USERNAME" styleClass="textEntryBox" stylesheets="@../styles/login.css"/>
+                   promptText="USERNAME" styleClass="textEntryBox"/>
     </HBox>
     <HBox alignment="CENTER" VBox.vgrow="ALWAYS">
         <Button fx:id="loginButton" alignment="CENTER" onAction="#loginButtonPressed"

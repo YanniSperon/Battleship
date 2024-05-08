@@ -4,7 +4,7 @@
 <?import javafx.scene.image.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background1" stylesheets="@../styles/home.css"
+<AnchorPane fx:id="root" prefHeight="500.0" prefWidth="800.0" styleClass="background1" stylesheets="@../styles/shared.css"
             xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="HomeController">
     <ImageView fitHeight="150.0" fitWidth="712.0" layoutX="17.0" layoutY="14.0" preserveRatio="true"

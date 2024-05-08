@@ -218,6 +218,7 @@ public class Client extends Thread {
                 executeCommand(uuid, p);
             } catch (Exception e) {
                 e.printStackTrace();
+                System.exit(1);
             }
         }
     }

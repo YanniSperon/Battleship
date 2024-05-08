@@ -203,7 +203,7 @@ public class GameController implements CustomController, Initializable {
     private void updateBoard(Game g) {
         if (g.winner != Game.Player.NONE) {
             // Game over
-            onGameEnded();
+            onGameEnded(g.winner == ourPlayer);
             return;
         }
 
@@ -215,7 +215,7 @@ public class GameController implements CustomController, Initializable {
             deltaGame = g;
             oldGame = deltaGame;
         }
-        System.out.println(deltaGame);
+        //System.out.println(deltaGame);
 
         boolean isP1 = GUIClient.clientConnection.uuid.equals(g.player1);
         ourPlayer = isP1 ? Game.Player.PLAYER1 : Game.Player.PLAYER2;
@@ -317,7 +317,7 @@ public class GameController implements CustomController, Initializable {
 
     }
 
-    private void onGameEnded() {
+    private void onGameEnded(boolean didWeWin) {
         oldGame = null;
 
         resetBoard();
@@ -328,10 +328,16 @@ public class GameController implements CustomController, Initializable {
 
         mediaPlayer.pause();
 
-        HomeController homeController = (HomeController) GUIClient.viewMap.get("home").controller;
-        homeController.mediaPlayer.play();
+        GUIView v = GUIClient.viewMap.get("gameover");
+        Scene s = v.scene;
+        GameOverController goc = (GameOverController) v.controller;
 
-        GUIClient.primaryStage.setScene(GUIClient.viewMap.get("home").scene);
+        if (didWeWin) {
+            goc.displayWin();
+        } else {
+            goc.displayLoss();
+        }
+        GUIClient.primaryStage.setScene(s);
     }
 
     private Point3D toOurCoordinates(Point3D blenderCoordinates) {
@@ -608,7 +614,7 @@ public class GameController implements CustomController, Initializable {
         GUIClient.clientConnection.send(new Packet(lg));
 
         currentHeldPiece = null;
-        onGameEnded();
+        onGameEnded(false);
     }
 
     private void triggerFire() {
