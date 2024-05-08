@@ -34,6 +34,7 @@ public class GameController implements CustomController, Initializable {
     private final ArrayList<UUID> ships = new ArrayList<UUID>();
 
     private MeshView waitingMessage;
+    private MeshView opponentsTurnMessage;
     private Game.Player ourPlayer = null;
 
     private UUID selectedSquare = null;
@@ -219,6 +220,8 @@ public class GameController implements CustomController, Initializable {
 
         boolean isP1 = GUIClient.clientConnection.uuid.equals(g.player1);
         ourPlayer = isP1 ? Game.Player.PLAYER1 : Game.Player.PLAYER2;
+
+        opponentsTurnMessage.setVisible(g.turn != ourPlayer);
 
         if (isP1) {
             if (g.player1Pieces.size() == 5) {
@@ -583,7 +586,7 @@ public class GameController implements CustomController, Initializable {
                     triggerFire();
                 }
             });
-            g3.addComponent(m3dc);
+            g5.addComponent(m3dc);
             m3dc.meshView.setMouseTransparent(false);
             m3dc.meshView.setMaterial(MaterialManager.load("Button.mat"));
         }
@@ -592,6 +595,11 @@ public class GameController implements CustomController, Initializable {
         waitingMessage = new MeshView(MeshManager.load("WaitingMessage.obj").mesh);
         waitingMessage.setMaterial(MaterialManager.load("WaitingForYou.mat"));
         g3.childrenHolder.getChildren().add(waitingMessage);
+
+        opponentsTurnMessage = new MeshView(MeshManager.load("OpponentsTurn.obj").mesh);
+        opponentsTurnMessage.setMaterial(MaterialManager.load("OpponentsTurn.mat"));
+        g3.childrenHolder.getChildren().add(opponentsTurnMessage);
+        opponentsTurnMessage.setVisible(false);
 
         generatePlacingIndicators();
 

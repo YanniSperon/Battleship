@@ -42,6 +42,8 @@ public class GameOverController implements CustomController, Initializable {
 
     @Override
     public void onRenderUpdate(double deltaTime) {
+        defeatMusic.setVolume(GUIClient.volumeMenuMusic);
+        victoryMusic.setVolume(GUIClient.volumeMenuMusic);
     }
 
     @Override
@@ -50,7 +52,7 @@ public class GameOverController implements CustomController, Initializable {
 
         Media victoryMedia = new Media(getClass().getResource("/audio/GameWin.mp3").toExternalForm());
         victoryMusic = new MediaPlayer(victoryMedia);
-        victoryMusic.setVolume(GUIClient.volumeMusic);
+        victoryMusic.setVolume(GUIClient.volumeMenuMusic);
         victoryMusic.setAutoPlay(true);
         victoryMusic.setOnEndOfMedia(new Runnable() {
             @Override
@@ -63,7 +65,7 @@ public class GameOverController implements CustomController, Initializable {
 
         Media defeatMedia = new Media(getClass().getResource("/audio/GameLoss.mp3").toExternalForm());
         defeatMusic = new MediaPlayer(defeatMedia);
-        defeatMusic.setVolume(GUIClient.volumeMusic);
+        defeatMusic.setVolume(GUIClient.volumeMenuMusic);
         defeatMusic.setAutoPlay(true);
         defeatMusic.setOnEndOfMedia(new Runnable() {
             @Override

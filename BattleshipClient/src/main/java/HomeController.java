@@ -5,21 +5,15 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.VBox;
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
 
-import java.io.File;
 import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.ResourceBundle;
-import java.util.UUID;
 
 public class HomeController implements CustomController, Initializable {
     public ProgressBar levelProgressBar;
@@ -121,7 +115,7 @@ public class HomeController implements CustomController, Initializable {
     @Override
     public void onRenderUpdate(double deltaTime) {
         navigationSFX.setVolume(GUIClient.volumeMenuSFX);
-        mediaPlayer.setVolume(GUIClient.volumeMusic);
+        mediaPlayer.setVolume(GUIClient.volumeMenuMusic);
     }
 
     @Override
@@ -129,7 +123,7 @@ public class HomeController implements CustomController, Initializable {
         GUIClient.viewMap.put("home", new GUIView(null, this));
         Media media = new Media(getClass().getResource("/audio/TitleScreenMusic.mp3").toExternalForm());
         mediaPlayer = new MediaPlayer(media);
-        mediaPlayer.setVolume(GUIClient.volumeMusic);
+        mediaPlayer.setVolume(GUIClient.volumeMenuMusic);
         mediaPlayer.setAutoPlay(true);
         mediaPlayer.setOnEndOfMedia(new Runnable() {
             @Override

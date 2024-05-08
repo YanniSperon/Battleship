@@ -27,7 +27,7 @@ public class GUIClient extends Application {
     public static Stage primaryStage = null;
     public static boolean isPlaying = false;
 
-    public static double volumeMusic = 0.03;
+    public static double volumeMenuMusic = 0.03;
     public static double volumeMenuSFX = 0.05;
     public static double volumeGame = 0.05;
     public static double volumeGameMusic = 0.02;
